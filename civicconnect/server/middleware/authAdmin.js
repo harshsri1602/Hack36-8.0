@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken'
-import UserModel from '../models/user.model';
+import Admin_model from '../models/admin.model';
 
-const authUser = async (req,res,next) => {
+const authAdmin = async (req,res,next) => {
     try {
         const token = req.cookies.jwt;
         if (!token) {
@@ -12,7 +12,7 @@ const authUser = async (req,res,next) => {
             return res.status(401).json({ error: "Unauthorized - wrong token" })
         }
         const id = decoded.id;
-        const user = await UserModel.findById(id).select('-password');
+        const user = await Admin_model.findById(id).select('-password');
         req.user = user;
         next();
     } catch (error) {
@@ -21,4 +21,4 @@ const authUser = async (req,res,next) => {
     }
 }
 
-export default authUser;
+export default authAdmin;
