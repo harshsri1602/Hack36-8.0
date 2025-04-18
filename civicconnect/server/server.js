@@ -1,15 +1,22 @@
-require("dotenv").config();
-const express = require("express");
-const cors = require("cors"); 
-const connectDB = require("./config/db");
-const session = require("express-session");
-const MemoryStore = require('memorystore')(session); // This is to prevent memory leaks in session storage by providing a more efficient in-memory store than the default MemoryStore, with optional cleanup of expired sessions.
+import dotenv from 'dotenv';
+import express from 'express';
+import cors from 'cors' ;
+import connectDB from "./config/db.js";
+import session from "express-session";
+import memorystore from 'memorystore';
+import cookieParser from 'cookie-parser';
+import { connectCloudinary } from './config/cloudinary.js';
+import UserRouter from './routes/user.routes.js';
+const MemoryStore = memorystore(session); // This is to prevent memory leaks in session storage by providing a more efficient in-memory store than the default MemoryStore, with optional cleanup of expired sessions.
 
+dotenv.config();
 connectDB();
+connectCloudinary();
 const app = express();
 app.use(cors());
 app.use(express.json());
-
+app.use(cookieParser());
+app.use('api/v1/user',UserRouter);
 
 
 app.get("/", (req, res) => {

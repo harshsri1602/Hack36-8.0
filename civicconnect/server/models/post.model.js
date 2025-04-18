@@ -41,8 +41,12 @@ const post_schema = new mongoose.Schema({
         type:mongoose.Schema.Types.ObjectId,
         ref:'User',
         required:true,
-    }
+    },
+    comments:[{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:'Comment'
+    }],
 });
 
-const Post_model = mongoose.model('Posts',post_schema);
+const Post_model = mongoose.model('Post',post_schema);
 export default Post_model

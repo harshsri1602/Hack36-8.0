@@ -35,7 +35,7 @@ const user_Schema = new mongoose.Schema({
     },
     posts:[{
         type:mongoose.Schema.Types.ObjectId,
-        ref:"Posts"
+        ref:"Post"
     }],
     isVerified:{
         type:Boolean,

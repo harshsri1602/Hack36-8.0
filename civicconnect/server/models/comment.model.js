@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const comment_schema = new mongoose.Schema({
     post_id:{
         type:mongoose.Schema.Types.ObjectId,
-        ref:'Posts',
+        ref:'Post',
         required:true,
     },
     written_by:{
@@ -21,5 +21,5 @@ const comment_schema = new mongoose.Schema({
     },
 })
 
-const Comment_model= mongoose.model('Comments',comment_schema);
+const Comment_model= mongoose.model('Comment',comment_schema);
 export default Comment_model;
