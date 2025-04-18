@@ -13,7 +13,7 @@ app.use(express.json());
 
 
 app.get("/", (req, res) => {
-    res.send("StudySphere API is running");
+    res.send("Civic Connect API is running");
 });
 app.listen(process.env.PORT || 8000, () => {
     console.log(`server is running on port ${process.env.PORT || 8000}`);
