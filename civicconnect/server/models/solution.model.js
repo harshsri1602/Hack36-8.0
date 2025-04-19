@@ -5,9 +5,9 @@ const solution_schema = new mongoose.Schema({
         type:String,
         required:true,
     },
-    img:{
+    img:[{
         type:String,
-    },
+    }],
     post:{
         type:mongoose.Schema.Types.ObjectId,
         ref:'Post'

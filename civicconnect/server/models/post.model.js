@@ -81,7 +81,19 @@ const PostSchema = new mongoose.Schema({
     admin_taken:{
         type:mongoose.Schema.Types.ObjectId,
         ref:'Admin'
-    }
+    },
+    votes: [{
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: true
+        },
+        voteType: {
+            type: Number, // 0, 1, 2, 3
+            enum: [0, 1, 2, 3],
+            required: true
+        }
+    }],
 });
 
 const PostModel = mongoose.model('Post',PostSchema);

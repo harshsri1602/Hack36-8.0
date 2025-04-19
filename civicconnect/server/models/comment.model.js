@@ -27,6 +27,19 @@ const CommentSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
+    votes: [{
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: true
+        },
+        voteType: {
+            type: String, // "upvote" or "downvote"
+            enum: ["upvote", "downvote"],
+            required: true
+        }
+    }],
+
 });
 
 
