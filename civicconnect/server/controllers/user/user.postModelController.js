@@ -1,6 +1,5 @@
 import CommentModel from "../../models/comment.model.js";
 import PostModel from "../../models/post.model.js";
-import CommentModel from "../../models/comment.model.js";
 
 // export const createPost = async(req,res)=>{
 //     try{
@@ -21,7 +20,8 @@ export const createPost = async(req,res)=>{
         const userId = req.user._id;
         const {title,description,tag} = req.body;
         const img=req.file;
-
+        const latitude = parseFloat(req.body.latitude);
+        const longitude = parseFloat(req.body.longitude);
         if(!title || !description || !tag){
             return res.status(400).json({
                 message : "Please provide title , description and tag"
@@ -108,7 +108,8 @@ export const deletePost = async(req,res)=>{
         )
 
         // now delete all the associated comments to this post (NOT DONE YET)
-        await CommentModel.findByIdAndDelete({post_id: postId});
+        //await CommentModel.findByIdAndDelete({post_id: postId});
+        await CommentModel.deleteMany({post_id : postId});
         // now delete the post
         await PostModel.findByIdAndDelete(postId);
 
@@ -124,10 +125,24 @@ export const deletePost = async(req,res)=>{
     }
 }
 
+// route for user to add a comment to a post(works on postman)
 export const CreateComment = async (req, res) => {
     try {
         const userId = req.user._id;
         const { post_id, comment } = req.body;
+
+        if(!post_id || !comment){
+            return res.status(400).json({
+                message : "Please provide the post and the comment!"
+            })
+        }
+
+        const post = await PostModel.findById(post_id);
+        if(!post){
+            return res.status(404).json({
+                message : "Post not found!"
+            })
+        }
 
         const newComment = new CommentModel({
             post_id,
@@ -153,6 +168,7 @@ export const CreateComment = async (req, res) => {
     }
 };
 
+// this is for the user to post a vote for a issue (works on postman)
 export const VotePost = async (req, res) => {
     try {
         const userId = req.user._id;
@@ -167,7 +183,7 @@ export const VotePost = async (req, res) => {
             post.mediumCount += 1;
         } else if(voteType===2){
             post.highCount += 1; 
-        } else if(voteType===2){
+        } else if(voteType===3){
             post.criticalCount += 1; 
         } else {
             return res.status(400).json({ error: "Invalid vote type" });
@@ -181,6 +197,7 @@ export const VotePost = async (req, res) => {
     }
 };
 
+// this works , tested on postman
 export const VoteComment = async (req, res) => {
     try {
         const userId = req.user._id;
@@ -207,3 +224,20 @@ export const VoteComment = async (req, res) => {
         res.status(500).json({ error: "Something went wrong while voting on comment" });
     }
 };
+
+// this works , tested on postman
+export const ViewRegion = async(req,res) => {
+    try {
+        const pincode = req.user.address.pincode;
+        const posts = await PostModel.find({pincode : pincode});
+        if(!posts){
+            return res.status(200).json({success:true,message:"No problems in your region"});
+        }
+        else{
+            return res.status(200).json({success:true,posts});
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Something went wrong while voting on comment" });
+    }
+}

@@ -13,7 +13,7 @@ const authAdmin = async (req,res,next) => {
         }
         const id = decoded.id;
         const user = await Admin_model.findById(id).select('-password');
-        req.user = user;
+        req.admin = user;
         next();
     } catch (error) {
         console.log("error in protectRoute middleware: ", error.message)

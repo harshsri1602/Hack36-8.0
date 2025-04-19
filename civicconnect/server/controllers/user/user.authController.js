@@ -53,7 +53,7 @@ export const userRegister = async(req,res)=>{
             const updateUser = await UserModel.findByIdAndUpdate(newUser._id,{profileImg:imgURL});
             await updateUser.save();
         }
-        return res.status(200).json({success:true,message:'Doctor Added'})
+        return res.status(200).json({success:true,message:'User Created'})
     } catch (error) {
         console.error(error);
         return res.status(500).json({success:false,message:error.message});
