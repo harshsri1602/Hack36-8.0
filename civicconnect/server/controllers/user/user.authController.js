@@ -21,7 +21,7 @@ export const userRegister = async(req,res)=>{
             return res.status(400).json({success:false,message:'Enter a strong password'});
         }
 
-        const checkUser = UserModel.find({$or:[{email},{phoneNumber}]});
+        const checkUser = await UserModel.findOne({$or:[{email},{phoneNumber}]});
         if(checkUser){
             return res.status(400).json({success:false,message:"Email or Phone Number Already taken"});
         }
@@ -39,7 +39,8 @@ export const userRegister = async(req,res)=>{
             email,
             password:hash_pwd,
             phoneNumber,
-            address:JSON.parse(address),
+            //address:JSON.parse(address),
+            address
         };
 
         const newUser = new UserModel(data);
@@ -48,13 +49,13 @@ export const userRegister = async(req,res)=>{
         if(img){
             const imgUpload = await cloudinary.uploader.upload(img.path,{resource_type:"image"});
             const imgURL = imgUpload.secure_url;
-            const updateUser = UserModel.findByIdAndUpdate(newUser._id,{profileImg:imgURL});
+            const updateUser = await UserModel.findByIdAndUpdate(newUser._id,{profileImg:imgURL});
             await updateUser.save();
         }
-        res.status(200).json({success:true,message:'Doctor Added'})
+        return res.status(200).json({success:true,message:'Doctor Added'})
     } catch (error) {
-        console.log(error);
-        res.status(500).json({success:false,message:error.message});
+        console.error(error);
+        return res.status(500).json({success:false,message:error.message});
     }
 }
 

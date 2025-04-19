@@ -16,7 +16,7 @@ const PostSchema = new mongoose.Schema({
         type:Date,
         default:Date.now()
     },
-    sever
+    //sever
     state:{
         type:String,
         enum:['open','solved'],
