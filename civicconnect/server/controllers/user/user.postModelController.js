@@ -236,7 +236,7 @@ export const VoteComment = async (req, res) => {
 export const ViewRegion = async(req,res) => {
     try {
         const pincode = req.user.address.pincode;
-        const posts = await PostModel.find({pincode : pincode}).populate('Comment');
+        const posts = await PostModel.find({pincode : pincode}).populate('comments');
         if(!posts){
             return res.status(200).json({success:true,message:"No problems in your region"});
         }
