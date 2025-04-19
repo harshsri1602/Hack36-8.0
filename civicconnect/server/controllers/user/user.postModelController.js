@@ -129,6 +129,19 @@ export const CreateComment = async (req, res) => {
         const userId = req.user._id;
         const { post_id, comment } = req.body;
 
+        if(!post_id || !comment){
+            return res.status(400).json({
+                message : "Please provide the post and the comment!"
+            })
+        }
+
+        const post = await PostModel.findById(post_id);
+        if(!post){
+            return res.status(404).json({
+                message : "Post not found!"
+            })
+        }
+
         const newComment = new CommentModel({
             post_id,
             written_by: userId,
