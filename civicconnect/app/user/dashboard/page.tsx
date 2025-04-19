@@ -6,6 +6,8 @@ import { PostCard } from "@/components/ui/user/PostCard";
 import POSTS from "@/data/posts.json";
 import LatestPostsSidebar from "@/components/ui/user/LatestPostsSidebar";
 import MapWidget from "@/components/ui/user/MapWidget";
+import { useEffect } from "react";
+import { useUser } from "@/context/userContext";
 
 const LATEST = [
     { id: 101, title: "Latest: New Feature Launched" },
@@ -14,6 +16,10 @@ const LATEST = [
 ];
 
 const HomePage: NextPage = () => {
+    const { user, setUser } = useUser();
+    useEffect(() => {
+        console.log(user);
+    }, []);
     return (
         <div className="min-h-screen bg-black text-white">
             <div
