@@ -2,7 +2,7 @@
 "use client";
 
 import { NextPage } from "next";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useUser } from "@/context/userContext";
 import { PostCard } from "@/components/ui/user/PostCard";
 import LatestPostsSidebar from "@/components/ui/user/LatestPostsSidebar";
@@ -17,19 +17,27 @@ interface ApiPost {
   latitude: number;
   longitude: number;
   comments: any[];
+  post_date: string;          // <— back‑end returns ISO date here
 }
-
-const LATEST = [
-  { id: 101, title: "Latest: New Feature Launched" },
-  { id: 102, title: "Latest: Bug Fixes Deployed" },
-  { id: 103, title: "Latest: Community Meetup" },
-];
 
 const HomePage: NextPage = () => {
   const { user } = useUser();
   const [posts, setPosts] = useState<ApiPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // derive latestPosts from posts
+  const latestPosts = useMemo(
+    () =>
+      [...posts]
+        .sort(
+          (a, b) =>
+            new Date(b.post_date).getTime() - new Date(a.post_date).getTime()
+        )
+        .slice(0, 5) // or however many you want
+        .map((p) => ({ id: p._id, title: p.title })),
+    [posts]
+  );
 
   useEffect(() => {
     if (!user?.address?.pincode) {
@@ -47,11 +55,10 @@ const HomePage: NextPage = () => {
           }
         );
         const data = await res.json();
-        console.log(res)
+
         if (!res.ok) {
           throw new Error(data.error || "Failed to fetch posts");
         }
-
         setPosts(Array.isArray(data.posts) ? data.posts : []);
       } catch (err) {
         console.error(err);
@@ -96,7 +103,7 @@ const HomePage: NextPage = () => {
           )}
         </main>
 
-        {/* sidebar+map spans cols 2–3 */}
+        {/* sidebar+map in second column */}
         <div
           className="
             row-start-1 row-span-2
@@ -106,8 +113,8 @@ const HomePage: NextPage = () => {
             flex flex-col space-y-8
           "
         >
-          <LatestPostsSidebar latest={LATEST} />
-          <MapWidget />
+          <LatestPostsSidebar latest={latestPosts} />
+          <MapWidget posts={posts} />
         </div>
       </div>
     </div>

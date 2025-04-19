@@ -1,9 +1,15 @@
+// components/ui/user/LatestPostsSidebar.tsx
 'use client'
 
 import React from 'react'
 
+export interface LatestItem {
+  id: string
+  title: string
+}
+
 interface LatestPostsSidebarProps {
-  latest: { id: number; title: string }[]
+  latest: LatestItem[]
 }
 
 export default function LatestPostsSidebar({
