@@ -69,15 +69,6 @@ export const userLogin = async(req,res)=>{
         }
 
         const isMatch = bcrypt.compare(password,user.password);
-        // if(isMatch){
-        //     generateTokenAndSetCookie(res, user._id);
-        //     return res.status(200).json({success:true,user:user});
-        // }
-        // // else{
-        // //     return res.status(400).json({success:false,message:'Invalid Credentials'});
-        // // }
-
-        // return res.status(400).json({success:false,message:'Invalid Credentials'});
 
         if(!isMatch){
             return res.status(400).json({

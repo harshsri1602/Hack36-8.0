@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import {v2 as cloudinary} from 'cloudinary';
 import validator from 'validator'
-import Admin_model from '../../models/admin.model';
+import Admin_model from '../../models/admin.model.js';
 
 export const AdminRegister = async(req,res)=>{
     try {
