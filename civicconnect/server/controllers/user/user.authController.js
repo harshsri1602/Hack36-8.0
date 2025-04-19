@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import {v2 as cloudinary} from 'cloudinary';
 import validator from 'validator'
 import UserModel from '../../models/user.model.js';
+import {generateTokenAndSetCookie} from '../../utils/generateTokenandSetCookies.js'
 
 export const userRegister = async(req,res)=>{
     try {
@@ -62,22 +63,36 @@ export const userRegister = async(req,res)=>{
 export const userLogin = async(req,res)=>{
     try {
         const {email,password} = req.body;
-        const user = await UserModel.findOne({email}).select('-password');
+        const user = await UserModel.findOne({email});
         if(!user){
             return res.status(401).json({success:false,message:'Account Not Found'});
         }
 
         const isMatch = bcrypt.compare(password,user.password);
-        if(isMatch){
-            generateTokenAndSetCookie(res, user._id);
-            res.status(200).json({success:true,user:user});
+        // if(isMatch){
+        //     generateTokenAndSetCookie(res, user._id);
+        //     return res.status(200).json({success:true,user:user});
+        // }
+        // // else{
+        // //     return res.status(400).json({success:false,message:'Invalid Credentials'});
+        // // }
+
+        // return res.status(400).json({success:false,message:'Invalid Credentials'});
+
+        if(!isMatch){
+            return res.status(400).json({
+                message : "Invalid credentials provided!"
+            })
         }
-        else{
-            return res.status(400).json({success:false,message:'Invalid Credentials'});
-        }
+        
+        generateTokenAndSetCookie(user._id,res);
+        return res.status(200).json({
+            message : "User logged in successfully",
+            user
+        })
     } catch (error) {
-        console.log(error);
-        res.status(500).json({success:false,message:error.message});
+        console.error(error);
+        return res.status(500).json({success:false,message:error.message});
     }
 }
 
