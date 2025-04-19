@@ -3,6 +3,7 @@ import CommentModel from "../../models/comment.model.js";
 import PostModel from "../../models/post.model.js";
 import {v2 as cloudinary} from 'cloudinary';
 import UserModel from "../../models/user.model.js";
+import postTitleTrie from "../../utils/TrieIndex.js";
 
 // export const createPost = async(req,res)=>{
 //     try{
@@ -55,6 +56,8 @@ export const createPost = async(req,res)=>{
 
         const newPost = new PostModel(postData);
         await newPost.save();
+
+        postTitleTrie.insert(title, newPost._id);
 
         await UserModel.findByIdAndUpdate(
             userId,
@@ -452,3 +455,35 @@ export const removePostVote = async(req,res)=>{
         })
     }
 }
+
+// route related to searching a post
+export const searchPosts = async(req, res) => {
+    try {
+        const { query } = req.body;  // The search query (e.g., prefix to search for)
+
+        if (!query) {
+            return res.status(400).json({ message: "Please provide a search query!" });
+        }
+
+        // Search the Trie for posts that start with the given query (prefix)
+        const postsMatchingPrefix = postTitleTrie.search(query);
+
+        // If no posts are found
+        if (postsMatchingPrefix.length === 0) {
+            return res.status(404).json({ message: "No posts found matching the query." });
+        }
+
+        // Fetch post details based on the results from the Trie
+        const postIds = postsMatchingPrefix.map(post => post.postId);
+        const posts = await PostModel.find({ '_id': { $in: postIds } });
+
+        return res.status(200).json({
+            message: "Posts found",
+            posts
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Internal Server Error!" });
+    }
+};
