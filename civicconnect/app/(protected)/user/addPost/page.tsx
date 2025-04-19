@@ -5,7 +5,6 @@ import React, { useEffect, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
-// ── Override default Leaflet marker icons to use local images ───────────
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
     iconRetinaUrl: "/marker-icon-2x.png",
@@ -41,7 +40,8 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from "@/components/ui/carousel";
-import MapWidget from "@/components/ui/user/MapWidget";
+import { MapContainer } from "react-leaflet";
+import { Marker, TileLayer, useMapEvents } from "react-leaflet";
 
 const ACCEPTED_IMAGE_TYPES = [
     "image/jpeg",
@@ -64,8 +64,28 @@ const postSchema = z.object({
                 message: "Image should be .jpg, .jpeg, .png or .webp",
             }
         ),
-    tags: z.string().min(1, "Please select a tag"),
+    tag: z.string().min(1, "Please select a tag"),
+    latitude: z.number(),
+    longitude: z.number(),
 });
+
+const LocationMarker = ({
+    onSelect,
+}: {
+    onSelect: (latlng: { lat: number; lng: number }) => void;
+}) => {
+    const [pos, setPos] = useState<{ lat: number; lng: number } | null>(null);
+
+    useMapEvents({
+        click(e: any) {
+            setPos(e.latlng);
+            onSelect(e.latlng);
+            console.log("Picked location:", e.latlng);
+        },
+    });
+
+    return pos ? <Marker position={pos} /> : null;
+};
 
 const CreatePostPage = () => {
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -74,17 +94,20 @@ const CreatePostPage = () => {
         lng: number;
     } | null>(null);
 
-    const form = useForm<PostForm>({
+    const form = useForm({
         resolver: zodResolver(postSchema),
         defaultValues: {
             title: "",
             description: "",
             images: undefined,
-            tags: "Other",
+            tag: "other",
+            latitude: 0,
+            longitude: 0,
         },
     });
 
     const watchImages = form.watch("images");
+    type PostForm = z.infer<typeof postSchema>;
     useEffect(() => {
         if (watchImages && watchImages instanceof FileList) {
             const previews = Array.from(watchImages).map((file) =>
@@ -95,10 +118,56 @@ const CreatePostPage = () => {
         }
     }, [watchImages]);
 
-    const onSubmit = (values: PostForm) => {
+    const onSubmit = async (values: PostForm) => {
         console.log("Form values:", values);
-        console.log("Selected location:", location);
-        // send `values` + `location` to your backend here
+
+        // Only proceed if there are images selected
+        if (!values.images || values.images.length === 0) {
+            alert("Please upload at least one image.");
+            return;
+        }
+
+        // Create a new FormData object to hold the form data
+        const formData = new FormData();
+
+        // Append regular form fields to FormData
+        formData.append("title", values.title);
+        formData.append("description", values.description);
+        formData.append("tag", values.tag);
+        formData.append("latitude", values.latitude.toString());
+        formData.append("longitude", values.longitude.toString());
+
+        // Append images (if any) to FormData
+        if (values.images) {
+            Array.from(values.images).forEach((file: File) => {
+                formData.append("images", file);
+            });
+        }
+
+        try {
+            const res = await fetch(
+                "http://localhost:8000/api/v1/user/postIssue",
+                {
+                    method: "POST",
+                    body: formData,
+                    credentials: "include",
+                }
+            );
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                console.error("Server Error:", data.message);
+                alert(`Error: ${data.message}`);
+                return;
+            }
+
+            console.log("Server Response:", data.message);
+            alert(`Success: ${data.message}`);
+        } catch (err) {
+            console.error("Network error:", err);
+            alert("Something went wrong while submitting the post.");
+        }
     };
 
     return (
@@ -156,7 +225,7 @@ const CreatePostPage = () => {
 
                         <FormField
                             control={form.control}
-                            name="tags"
+                            name="tag"
                             render={({ field }) => (
                                 <FormItem className="relative flex flex-col gap-y-1">
                                     <FormLabel className="text-white">
@@ -167,10 +236,10 @@ const CreatePostPage = () => {
                                             onValueChange={field.onChange}
                                             defaultValue={field.value}
                                         >
-                                            <SelectTrigger className="text-white bg-transparent border w-full">
+                                            <SelectTrigger className="text-white bg-transparent border w-full z-40">
                                                 <SelectValue placeholder="Select a tag" />
                                             </SelectTrigger>
-                                            <SelectContent className="bg-[#1A1A1A] text-white">
+                                            <SelectContent className="bg-[#1A1A1A] text-white max-h-[150px] overflow-y-auto z-50 absolute top-full">
                                                 <SelectItem value="road">
                                                     Road
                                                 </SelectItem>
@@ -189,9 +258,9 @@ const CreatePostPage = () => {
                                             </SelectContent>
                                         </Select>
                                     </FormControl>
-                                    {form.formState.errors.tags && (
+                                    {form.formState.errors.tag && (
                                         <FormMessage className="absolute text-red-500 text-sm -bottom-6 left-0">
-                                            {form.formState.errors.tags.message}
+                                            {form.formState.errors.tag.message}
                                         </FormMessage>
                                     )}
                                 </FormItem>
@@ -249,7 +318,6 @@ const CreatePostPage = () => {
                             </div>
                         )}
 
-                        {/* Dark‐themed Map Picker */}
                         <FormItem className="flex flex-col gap-y-2">
                             <FormLabel className="text-white">
                                 Select Location
@@ -267,7 +335,19 @@ const CreatePostPage = () => {
                       © <a href="https://www.openstreetmap.org/">OSM</a>
                     `}
                                     />
-                                    <LocationMarker onSelect={setLocation} />
+                                    <LocationMarker
+                                        onSelect={(latlng) => {
+                                            setLocation(latlng);
+                                            form.setValue(
+                                                "longitude",
+                                                latlng.lng
+                                            );
+                                            form.setValue(
+                                                "latitude",
+                                                latlng.lat
+                                            );
+                                        }}
+                                    />
                                 </MapContainer>
                             </div>
                             {location && (
@@ -277,8 +357,6 @@ const CreatePostPage = () => {
                                 </p>
                             )}
                         </FormItem>
-
-                        {/* Submit Button */}
                         <Button
                             type="submit"
                             className={`mt-4 transition duration-150 active:scale-95 ${
@@ -292,7 +370,6 @@ const CreatePostPage = () => {
                     </form>
                 </Form>
             </div>
-            <MapWidget />
         </div>
     );
 };

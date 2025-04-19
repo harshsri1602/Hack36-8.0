@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import clsx from "clsx";
+import { useUser } from "@/context/userContext";
+import { useRouter } from "next/navigation";
 
 const menuItems = [
     { icon: <Home size={25} />, label: "Home", href: "/user/dashboard" },
@@ -24,7 +26,40 @@ const menuItems = [
 ];
 
 export default function Sidebar() {
+    const handleClick = async () => {
+        console.log("sdsfd");
+        try {
+            const res = await fetch(
+                "http://localhost:8000/api/v1/user/logout",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                }
+            );
+
+            if (!res.ok) {
+                const errText = await res.text();
+                console.error(res.status, errText);
+                return;
+            }
+
+            const json = await res.json();
+            console.log("Logout response:", json);
+
+            setUser(null);
+
+            document.cookie = "jwt=; Max-Age=0; path=/";
+
+            router.push("/login");
+        } catch (err) {
+            console.error("Network error:", err);
+        }
+    };
+
+    const { setUser } = useUser();
     const [isHovered, setIsHovered] = useState(false);
+    const router = useRouter();
 
     return (
         <div
@@ -77,6 +112,7 @@ export default function Sidebar() {
                             <LogOut />
                         </div>
                         <span
+                            onClick={() => handleClick()}
                             className={clsx(
                                 "whitespace-nowrap transition-opacity duration-300",
                                 isHovered ? "opacity-100" : "opacity-0"
