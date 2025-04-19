@@ -187,6 +187,10 @@ export const VotePost = async (req, res) => {
         const userId = req.user._id;
         const { post_id, voteType } = req.body;
 
+        if (![0, 1, 2, 3].includes(voteType)) {
+            return res.status(400).json({ error: "Invalid vote type" });
+        }
+
         const post = await PostModel.findById(post_id);
         if (!post) return res.status(404).json({ error: "Post not found" });
         // Input of votetype should be 0 1 2 3
@@ -194,6 +198,8 @@ export const VotePost = async (req, res) => {
         let flag=false;
 
         let checkPreviousInteraction = await UserModel.findOne({_id : userId , "interactedPosts.postId" : post_id}).select('interactedPosts');
+        const existingVoteIndex = post.votes.findIndex(v => v.userId.toString() === userId.toString());
+        
         if(checkPreviousInteraction){
             flag=true;
             // user has already voted on this post
@@ -229,13 +235,13 @@ export const VotePost = async (req, res) => {
         } else {
             return res.status(400).json({ error: "Invalid vote type" });
         }
-        
         if(!flag){
             // user voted on this post for the first time , just add the reaction
             await UserModel.findOneAndUpdate(
                 {_id : userId },
                 {$push : {interactedPosts : {postId : post_id,reaction : currentReaction}}}
             )
+            post.votes.push({ userId, voteType });
         }
         else{
             // user voted on this post b4 , just update the reaction
@@ -243,6 +249,7 @@ export const VotePost = async (req, res) => {
                 {_id : userId , "interactedPosts.postId" : post_id},
                 {$set : {"interactedPosts.$.reaction" : currentReaction}}
             )
+            post.votes[existingVoteIndex].voteType = voteType;
         }
         
         await post.save();
@@ -259,20 +266,24 @@ export const VoteComment = async (req, res) => {
         const userId = req.user._id;
         //console.log(req.user);
         const { commentId, voteType } = req.body;
-
+        if (!["upvote", "downvote"].includes(voteType)) {
+            return res.status(400).json({ error: "Invalid vote type" });
+        }
+        
         const comment = await CommentModel.findById(commentId);
         if (!comment) return res.status(404).json({ error: "Comment not found" });
 
         if (!comment.upvotes) comment.upvotes = 0;
         if (!comment.downvotes) comment.downvotes = 0;
 
+        const existingVoteIndex = comment.votes.findIndex(v => v.userId.toString() === userId.toString());
         let flag=false;
         let checkPreviousInteraction = await UserModel.findOne({_id : userId , "interactedComments.commentId" : commentId}).select('interactedComments');
         let currentReaction;
-        if(checkPreviousInteraction){
+        if(checkPreviousInteraction && (existingVoteIndex !== -1)){
             flag=true;
             const previousReaction = checkPreviousInteraction.interactedComments.find(item => item.commentId.toString() === commentId.toString());
-
+            const previousVote = comment.votes[existingVoteIndex].voteType;
             if(previousReaction.reaction === "upvote"){
                 comment.upvotes-=1;
             }
@@ -296,12 +307,14 @@ export const VoteComment = async (req, res) => {
                 {_id : userId },
                 {$push : {interactedComments : {commentId : commentId,reaction : currentReaction}}}
             )
+            comment.votes.push({ userId, voteType });
         }
         else{
             await UserModel.findOneAndUpdate(
                 {_id : userId , "interactedComments.commentId" : commentId},
                 {$set : {"interactedComments.$.reaction" : currentReaction}}
             )
+            comment.votes[existingVoteIndex].voteType = voteType;
         }
 
         await comment.save();
