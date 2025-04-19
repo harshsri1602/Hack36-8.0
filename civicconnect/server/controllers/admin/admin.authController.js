@@ -2,7 +2,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import {v2 as cloudinary} from 'cloudinary';
 import validator from 'validator'
-import Admin_model from '../../models/admin.model.js';
+import AdminModel from '../../models/admin.model.js';
+import PostModel from '../../models/post.model.js';
 
 export const AdminRegister = async(req,res)=>{
     try {
@@ -32,39 +33,76 @@ export const AdminRegister = async(req,res)=>{
             areaPin,
         };
 
-        const newUser = new Admin_model(data);
+        const newUser = new AdminModel(data);
         await newUser.save();
         
         if(img){
             const imgUpload = await cloudinary.uploader.upload(img.path,{resource_type:"image"});
             const imgURL = imgUpload.secure_url;
-            const updateUser = Admin_model.findByIdAndUpdate(newUser._id,{profileImg:imgURL});
+            const updateUser = AdminModel.findByIdAndUpdate(newUser._id,{profileImg:imgURL});
         }
-        res.status(200).json({success:true,message:'Doctor Added'})
+        res.status(200).json({success:true,message:'Admin Created'})
     } catch (error) {
         console.log(error);
         res.status(500).json({success:false,message:error.message});
     }
 }
 
-export const userLogin = async(req,res)=>{
+export const AdminLogin = async(req,res)=>{
     try {
         const {email,password} = req.body;
-        const user = await Admin_model.findOne({email}).select('-password');
+        const user = await AdminModel.findOne({email});
         if(!user){
             return res.status(401).json({success:false,message:'Account Not Found'});
         }
 
         const isMatch = bcrypt.compare(password,user.password);
-        if(isMatch){
-            generateTokenAndSetCookie(res, user._id);
-            res.status(200).json({success:true,user:user});
+
+        if(!isMatch){
+            return res.status(400).json({
+                message : "Invalid credentials provided!"
+            })
         }
-        else{
-            return res.status(400).json({success:false,message:'Invalid Credentials'});
-        }
+        
+        generateTokenAndSetCookie(user._id,res);
+        return res.status(200).json({
+            message : "User logged in successfully",
+            user
+        })
     } catch (error) {
-        console.log(error);
-        res.status(500).json({success:false,message:error.message});
+        console.error(error);
+        return res.status(500).json({success:false,message:error.message});
+    }
+}
+
+export const TakeProblem = async(req,res)=>{
+    try {
+        const {post_id} = req.body;
+        const admin = req.admin;
+        const post = await PostModel.findByIdAndUpdate({post_id},{
+            admin_taken:admin._id,
+        });
+        const adminChange = await AdminModel.findByIdAndUpdate(admin._id,{
+            $push : {posts: post._id}
+        });
+
+        return res.status(200).json({success:true,message:'Problem Received'});
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({success:false,message:error.message});
+    }
+}
+
+export const updateStatus = async(req,res)=>{
+    try {
+        const admin = req.admin;
+        const {post_id,state} = req.body;
+        const post = await PostModel.findByIdAndUpdate(post_id,{
+            state:state
+        });
+        return res.status(201).json({success:true,message:'Updated status of problem'})
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({success:false,message:error.message});
     }
 }

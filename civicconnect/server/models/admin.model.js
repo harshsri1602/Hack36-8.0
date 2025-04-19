@@ -28,7 +28,11 @@ const AdminSchema = new mongoose.Schema({
     areaPin:{
         type:String,
         required:true,
-    }
+    },
+    posts:[{
+        type:mongoose.Schema.Types.ObjectId,
+        ref:'Post'
+    }]
 });
 
 const AdminModel = mongoose.model('Admin',AdminSchema);
