@@ -47,10 +47,14 @@ export const createPost = async(req,res)=>{
         const newPost = new PostModel(postData);
         await newPost.save();
 
-        await UserModel.findByIdAndUpdate(
+        const updateProf = await UserModel.findByIdAndUpdate(
             userId,
-            {$push : {posts : newPost._id}}
+            {$push : {posts : newPost._id}},
+            { new: true }
         )
+        if(!updateProf){
+            console.log("Failed to Add to user profile");
+        }
 
         return res.status(200).json({
             message : "User successfully created a post!",
@@ -232,7 +236,7 @@ export const VoteComment = async (req, res) => {
 export const ViewRegion = async(req,res) => {
     try {
         const pincode = req.user.address.pincode;
-        const posts = await PostModel.find({pincode : pincode});
+        const posts = await PostModel.find({pincode : pincode}).populate('Comment');
         if(!posts){
             return res.status(200).json({success:true,message:"No problems in your region"});
         }
