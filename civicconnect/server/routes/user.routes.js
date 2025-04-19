@@ -2,7 +2,7 @@ import express from 'express';
 import { getUser, logoutUser, userLogin, userRegister } from '../controllers/user/user.authController.js';
 //import { CreateComment, createPost, VoteComment, VotePost , viewAllUserPosts , deletePost, ViewRegion, PostById} from '../controllers/user/user.postModelController.js';
 //import { userLogin, userRegister } from '../controllers/user/user.authController.js';
-import { removeCommentVote,removePostVote,CreateComment, createPost, VoteComment, VotePost , viewAllUserPosts , deletePost, ViewRegion,PostById} from '../controllers/user/user.postModelController.js';
+import { searchPosts,removeCommentVote,removePostVote,CreateComment, createPost, VoteComment, VotePost , viewAllUserPosts , deletePost, ViewRegion,PostById} from '../controllers/user/user.postModelController.js';
 import authUser from '../middleware/authUser.js';
 import { uploadImages } from '../middleware/multer.js';
 //import 
@@ -22,5 +22,6 @@ UserRouter.get('/:id',getUser)
 UserRouter.post('/logout',logoutUser);
 UserRouter.post('/removePostVote/:postId',authUser,removePostVote);
 UserRouter.post('/removeCommentVote/:commentId',authUser,removeCommentVote);
+UserRouter.get('/searchPosts',authUser,searchPosts);
 
 export default UserRouter;
