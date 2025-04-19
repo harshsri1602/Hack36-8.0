@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useUser } from "@/context/userContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { Trash2 } from "lucide-react";
 
 interface Post {
     _id: string;
@@ -14,6 +15,10 @@ interface Post {
     state: string;
     comments: any[];
     createdAt: string;
+    lowCount: number;
+    mediumCount: number;
+    highCount: number;
+    criticalCount: number;
 }
 
 const ProfilePage: React.FC = () => {
@@ -310,7 +315,25 @@ const ProfilePage: React.FC = () => {
                                                                     .length
                                                             }
                                                         </td>
-                                                        <td className="px-4 py-2 text-sm">
+                                                        <td
+                                                            className={`px-4 py-2 text-sm rounded font-medium ${
+                                                                {
+                                                                    Low: "bg-green-800 text-white",
+                                                                    Medium: "bg-yellow-700 text-white",
+                                                                    High: "bg-orange-700 text-white",
+                                                                    Critical:
+                                                                        "bg-red-700 text-white",
+                                                                    None: "bg-gray-700 text-white",
+                                                                }[
+                                                                    calculateSeverity(
+                                                                        post.lowCount,
+                                                                        post.mediumCount,
+                                                                        post.highCount,
+                                                                        post.criticalCount
+                                                                    )
+                                                                ]
+                                                            }`}
+                                                        >
                                                             {calculateSeverity(
                                                                 post.lowCount,
                                                                 post.mediumCount,
@@ -318,10 +341,11 @@ const ProfilePage: React.FC = () => {
                                                                 post.criticalCount
                                                             )}
                                                         </td>
+
                                                         <td className="px-4 py-2 text-center">
                                                             <Button
                                                                 variant="destructive"
-                                                                size="sm"
+                                                                size="icon"
                                                                 onClick={() =>
                                                                     handleDelete(
                                                                         post._id
@@ -333,9 +357,13 @@ const ProfilePage: React.FC = () => {
                                                                 }
                                                             >
                                                                 {deletingId ===
-                                                                post._id
-                                                                    ? "Deleting…"
-                                                                    : "Delete"}
+                                                                post._id ? (
+                                                                    <span className="text-xs">
+                                                                        ...
+                                                                    </span> // simple loading indicator
+                                                                ) : (
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                )}
                                                             </Button>
                                                         </td>
                                                     </tr>
