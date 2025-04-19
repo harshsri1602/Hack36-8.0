@@ -2,11 +2,17 @@
 "use client";
 
 import { NextPage } from "next";
+import dynamic from "next/dynamic";
 import { useEffect, useState, useMemo } from "react";
 import { useUser } from "@/context/userContext";
 import { PostCard } from "@/components/ui/user/PostCard";
 import LatestPostsSidebar from "@/components/ui/user/LatestPostsSidebar";
-import MapWidget from "@/components/ui/user/MapWidget";
+
+// ── Dynamic import of MapWidget (no SSR) ─────────────────────────────
+const MapWidget = dynamic(
+  () => import("@/components/ui/user/MapWidget"),
+  { ssr: false }
+);
 
 interface ApiPost {
   _id: string;
@@ -17,7 +23,7 @@ interface ApiPost {
   latitude: number;
   longitude: number;
   comments: any[];
-  post_date: string;          // <— back‑end returns ISO date here
+  post_date: string; // ISO date
 }
 
 const HomePage: NextPage = () => {
@@ -26,15 +32,16 @@ const HomePage: NextPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // derive latestPosts from posts
+  // derive the 5 most recent for the sidebar
   const latestPosts = useMemo(
     () =>
       [...posts]
         .sort(
           (a, b) =>
-            new Date(b.post_date).getTime() - new Date(a.post_date).getTime()
+            new Date(b.post_date).getTime() -
+            new Date(a.post_date).getTime()
         )
-        .slice(0, 5) // or however many you want
+        .slice(0, 5)
         .map((p) => ({ id: p._id, title: p.title })),
     [posts]
   );
@@ -48,7 +55,8 @@ const HomePage: NextPage = () => {
     const fetchRegionPosts = async () => {
       try {
         const res = await fetch(
-          "http://localhost:8000/api/v1/user/viewRegion",
+          "http://localhost:8000/api/v1/user/viewRegion?pincode=" +
+            user.address.pincode,
           {
             method: "GET",
             credentials: "include",
@@ -59,6 +67,7 @@ const HomePage: NextPage = () => {
         if (!res.ok) {
           throw new Error(data.error || "Failed to fetch posts");
         }
+        console.log("Region posts:", data.posts);
         setPosts(Array.isArray(data.posts) ? data.posts : []);
       } catch (err) {
         console.error(err);

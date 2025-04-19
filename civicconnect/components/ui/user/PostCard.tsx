@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { ChevronUp, ChevronDown } from "lucide-react";
 
 import {
@@ -95,10 +94,9 @@ export function PostCard({
                     {/* only one root per branch, so no siblings without a wrapper */}
                     {descriptionImageSrc && (
                         <div className="relative h-48 w-full rounded-md overflow-hidden mb-2">
-                            <Image
+                            <img
                                 src={descriptionImageSrc}
                                 alt="Post image"
-                                fill
                                 className="object-cover"
                             />
                         </div>

@@ -86,35 +86,31 @@ const Page: React.FC = () => {
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [commenters, setCommenters] = useState<Record<string,string>>({});
+  const [commenters, setCommenters] = useState<Record<string, string>>({});
   const [leftIdx, setLeftIdx] = useState(0);
 
-  // 1) Fetch the post
+  // Fetch the post
   useEffect(() => {
     if (!postId) return;
     setLoading(true);
-
     fetch(`http://localhost:8000/api/v1/user/post/${postId}`, {
       method: "GET",
       credentials: "include",
     })
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         console.log("Fetched post data:", data);
-        if (data.success) {
-          setPost(data.post);
-        } else {
-          throw new Error(data.error || "Failed to load post");
-        }
+        if (data.success) setPost(data.post);
+        else throw new Error(data.error || "Failed to load post");
       })
-      .catch(err => {
+      .catch((err) => {
         console.error("Error fetching post:", err);
         setError(err.message);
       })
       .finally(() => setLoading(false));
   }, [postId]);
 
-  // 2) Init priority bar
+  // Init priority
   useEffect(() => {
     if (!post) return;
     const sev = post.weightedSeverity ?? 0;
@@ -125,25 +121,26 @@ const Page: React.FC = () => {
     setLeftIdx(idx);
   }, [post]);
 
-  // 3) Fetch each comment’s author name
+  // Fetch commenter names
   useEffect(() => {
     if (!post) return;
-    const uniqueIds = Array.from(new Set(post.comments.map(c => c.written_by)));
-
+    const uniqueIds = Array.from(
+      new Set(post.comments.map((c) => c.written_by))
+    );
     Promise.all(
-      uniqueIds.map(uid =>
+      uniqueIds.map((uid) =>
         fetch(`http://localhost:8000/api/v1/user/${uid}`, {
           method: "GET",
           credentials: "include",
         })
-          .then(r => r.json())
-          .then(d => {
+          .then((r) => r.json())
+          .then((d) => {
             console.log(`Fetched user for comment ${uid}:`, d);
             return { uid, name: d.name };
           })
       )
-    ).then(arr => {
-      const map: Record<string,string> = {};
+    ).then((arr) => {
+      const map: Record<string, string> = {};
       arr.forEach(({ uid, name }) => {
         map[uid] = name;
       });
@@ -152,29 +149,61 @@ const Page: React.FC = () => {
     });
   }, [post]);
 
+  // Handler to vote on a comment
+  const voteComment = async (commentId: string, voteType: "upvote" | "downvote") => {
+    try {
+      const res = await fetch("http://localhost:8000/api/v1/user/voteComment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ commentId, voteType }),
+      });
+      const data = await res.json();
+      console.log("Vote response:", data);
+      if (!res.ok) throw new Error(data.error || "Vote failed");
+
+      // update the specific comment in state
+      setPost((prev) => {
+        if (!prev) return prev;
+        const updatedComments = prev.comments.map((c) =>
+          c._id === commentId ? data.comment : c
+        );
+        return { ...prev, comments: updatedComments };
+      });
+    } catch (err) {
+      console.error("Error voting comment:", err);
+    }
+  };
+
   if (loading) return <div className="p-8 text-white">Loading…</div>;
-  if (error)   return <div className="p-8 text-red-500">{error}</div>;
-  if (!post)   return <div className="p-8 text-white">Post not found</div>;
+  if (error) return <div className="p-8 text-red-500">{error}</div>;
+  if (!post) return <div className="p-8 text-white">Post not found</div>;
 
   const leftPrio = PRIORITIES[leftIdx];
-  const bumpUp   = () => setLeftIdx(i => Math.min(i + 1, PRIORITIES.length - 1));
-  const bumpDown = () => setLeftIdx(i => Math.max(i - 1, 0));
+  const bumpUp = () => setLeftIdx((i) => Math.min(i + 1, PRIORITIES.length - 1));
+  const bumpDown = () => setLeftIdx((i) => Math.max(i - 1, 0));
   const badgePrio: Priority = (() => {
     switch (post.state) {
-      case "UNRESOLVED":   return "low";
-      case "IN PROGRESS":  return "high";
+      case "UNRESOLVED": return "low";
+      case "IN PROGRESS": return "high";
       case "ACTION TAKEN": return "very-high";
-      case "RESOLVED":     return "very-low";
-      default:             return "low";
+      case "RESOLVED": return "very-low";
+      default: return "low";
     }
   })();
 
   return (
     <div className="p-6 md:ml-48 text-white space-y-6">
-      {/* Post card */}
+      {/* Post Card */}
       <div className="relative bg-[#1A1A1A] rounded-lg shadow-lg overflow-hidden">
-        {/* Priority bar */}
-        <div className={`absolute inset-y-0 left-0 w-6 ${PRIORITY_COLORS[leftPrio]} flex flex-col items-center justify-center`}>
+        {/* Left priority bar */}
+        <div
+          className={`
+            absolute inset-y-0 left-0 w-6
+            ${PRIORITY_COLORS[leftPrio]}
+            flex flex-col items-center justify-center
+          `}
+        >
           <button onClick={bumpUp} disabled={leftIdx === PRIORITIES.length - 1} className="p-0 hover:bg-transparent focus:ring-0">
             <ChevronUp className="h-4 w-4 text-gray-300" />
           </button>
@@ -230,16 +259,20 @@ const Page: React.FC = () => {
       {/* Comments */}
       {post.comments.length > 0 ? (
         <div className="space-y-4">
-          {post.comments.map(c => (
+          {post.comments.map((c) => (
             <Card key={c._id} className="bg-[#262626] border-none">
               <CardHeader className="flex justify-between items-center py-2 px-4">
                 <span className="font-medium text-white">
                   {commenters[c.written_by] ?? "..."}
                 </span>
                 <div className="flex items-center space-x-2 text-gray-300">
-                  <button><ArrowUp size={16} /></button>
+                  <button onClick={() => voteComment(c._id, "upvote")}>
+                    <ArrowUp size={16} />
+                  </button>
                   <span>{c.upvotes}</span>
-                  <button><ArrowDown size={16} /></button>
+                  <button onClick={() => voteComment(c._id, "downvote")}>
+                    <ArrowDown size={16} />
+                  </button>
                   <span>{c.downvotes}</span>
                 </div>
               </CardHeader>
