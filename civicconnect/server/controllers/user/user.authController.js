@@ -136,3 +136,18 @@ export const logoutUser = async (req, res) => {
         });
     }
 };
+
+export const getUser = async(req,res)=>{
+    try {
+        const {id} = req.params; 
+        const data = await UserModel.findById(id);
+        const name = data.name;
+        return res.status(200).json({success:true,name});       
+    } catch (error) {
+        console.error('Logout error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Something went wrong'
+        });
+    }
+}
