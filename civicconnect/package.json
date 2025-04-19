@@ -24,6 +24,7 @@
         "express": "^5.1.0",
         "express-session": "^1.18.1",
         "jsonwebtoken": "^9.0.2",
+        "leaflet.heat": "^0.2.0",
         "lucide-react": "^0.501.0",
         "memorystore": "^1.6.7",
         "mongoose": "^8.13.2",
@@ -32,10 +33,10 @@
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
         "react-hook-form": "^7.55.0",
+        "react-leaflet": "^5.0.0",
         "tailwind-merge": "^3.2.0",
-        "zod": "^3.24.3",
-        "validator": "^13.15.0"
-        
+        "validator": "^13.15.0",
+        "zod": "^3.24.3"
     },
     "devDependencies": {
         "@tailwindcss/postcss": "^4",

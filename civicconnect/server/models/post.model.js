@@ -54,6 +54,7 @@ const PostSchema = new mongoose.Schema({
         type:mongoose.Schema.Types.ObjectId,
         ref:'Comment'
     }],
+    postPinCode : {type : String}
 });
 
 const PostModel = mongoose.model('Post',PostSchema);

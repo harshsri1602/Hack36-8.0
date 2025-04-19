@@ -66,6 +66,7 @@ export const createPost = async(req,res)=>{
 export const viewAllUserPosts = async(req,res)=>{
     try{
         const userId = req.user._id;
+        const userPinCode = req.user.address.pincode;
 
         const allUserPosts = await UserModel.findById(userId).select('posts').populate('posts');
 
