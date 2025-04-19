@@ -21,7 +21,8 @@ export const createPost = async(req,res)=>{
         const userId = req.user._id;
         const {title,description,tag} = req.body;
         const img=req.file;
-
+        const latitude = parseFloat(req.body.latitude);
+        const longitude = parseFloat(req.body.longitude);
         if(!title || !description || !tag){
             return res.status(400).json({
                 message : "Please provide title , description and tag"
@@ -220,3 +221,19 @@ export const VoteComment = async (req, res) => {
         res.status(500).json({ error: "Something went wrong while voting on comment" });
     }
 };
+
+export const ViewRegion = async(req,res) => {
+    try {
+        const pincode = req.user.address.pincode;
+        const posts = await PostModel.find({pincode});
+        if(!posts){
+            return res.status(200).json({success:true,message:"No problems in your region"});
+        }
+        else{
+            return res.status(200).json({success:true,posts});
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Something went wrong while voting on comment" });
+    }
+}
