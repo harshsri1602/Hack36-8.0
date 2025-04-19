@@ -39,37 +39,24 @@ export function PostCard({
   status,
 }: PostCardProps) {
   const [idx, setIdx] = useState(0)
-  // track last direction for animation easing
-  const [direction, setDirection] = useState<'up' | 'down' | null>(null)
   const prio = PRIORITIES[idx]
 
-  const increase = () => {
-    setDirection('up')
+  const increase = () =>
     setIdx(i => Math.min(i + 1, PRIORITIES.length - 1))
-  }
-  const decrease = () => {
-    setDirection('down')
+  const decrease = () =>
     setIdx(i => Math.max(i - 1, 0))
-  }
-
-  // choose transition class based on direction
-  const transitionClass = direction === 'up'
-    ? 'transition-colors duration-300 ease-out'
-    : direction === 'down'
-      ? 'transition-colors duration-300 ease-in'
-      : ''
 
   return (
-    <Card className="relative flex overflow-hidden rounded-lg bg-[#FFFFFF11] border border-black">
-      {/* Animated priority bar */}
+    <Card className="relative flex overflow-hidden rounded-lg bg-[#1A1A1A] border border-black">
+      {/* ← Absolute priority bar on the left */}
       <div
         className={`
           absolute inset-y-0 left-0 w-6
           ${PRIORITY_COLORS[prio]}
-          ${transitionClass}
           flex flex-col items-center justify-center
         `}
       >
+        {/* Up arrow */}
         <Button
           variant="ghost"
           size="icon"
@@ -77,8 +64,10 @@ export function PostCard({
           disabled={idx === PRIORITIES.length - 1}
           className="p-0 hover:bg-transparent focus:ring-0"
         >
-          <ChevronUp className="h-4 w-4 text-gray-100" />
+          <ChevronUp className="h-4 w-4 text-gray-400" />
         </Button>
+
+        {/* Down arrow */}
         <Button
           variant="ghost"
           size="icon"
@@ -86,7 +75,7 @@ export function PostCard({
           disabled={idx === 0}
           className="p-0 hover:bg-transparent focus:ring-0"
         >
-          <ChevronDown className="h-4 w-4 text-gray-100" />
+          <ChevronDown className="h-4 w-4 text-gray-400" />
         </Button>
       </div>
 
@@ -97,6 +86,7 @@ export function PostCard({
             {title}
           </CardTitle>
         </CardHeader>
+
         <CardContent className="pt-2 pb-1">
           {descriptionImageSrc ? (
             <div className="relative h-48 w-full rounded-md overflow-hidden mb-2">
@@ -113,6 +103,7 @@ export function PostCard({
             </p>
           )}
         </CardContent>
+
         <CardFooter className="pt-0">
           <div className="w-full flex justify-between text-xs text-gray-400">
             <span>💬 {commentsCount} comments</span>
