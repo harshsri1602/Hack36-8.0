@@ -12,6 +12,7 @@ import {
     CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 type Priority = "very-low" | "low" | "high" | "very-high";
 const PRIORITIES: Priority[] = ["very-low", "low", "high", "very-high"];
@@ -23,6 +24,7 @@ const PRIORITY_COLORS: Record<Priority, string> = {
 };
 
 interface PostCardProps {
+    id: string;
     title: string;
     descriptionText?: string;
     descriptionImageSrc?: string;
@@ -30,77 +32,91 @@ interface PostCardProps {
     status: string;
 }
 
-export function PostCard({ title, descriptionText, descriptionImageSrc, commentsCount, status }: PostCardProps) {
-    const [idx, setIdx] = useState(0)
-    const prio = PRIORITIES[idx]
-    const increase = () => setIdx(i => Math.min(i + 1, PRIORITIES.length - 1))
-    const decrease = () => setIdx(i => Math.max(i - 1, 0))
-  
+export function PostCard({
+    id,
+    title,
+    descriptionText,
+    descriptionImageSrc,
+    commentsCount,
+    status,
+}: PostCardProps) {
+    const handleClick = (id: string) => {
+        router.push(`/user/${id}`);
+    };
+    const [idx, setIdx] = useState(0);
+    const router = useRouter();
+    const prio = PRIORITIES[idx];
+    const increase = () =>
+        setIdx((i) => Math.min(i + 1, PRIORITIES.length - 1));
+    const decrease = () => setIdx((i) => Math.max(i - 1, 0));
+
     return (
-      <Card className="relative flex overflow-hidden rounded-lg bg-[#1A1A1A] border border-black">
-        {/* Priority bar */}
-        <div
-          className={`
+        <Card className="relative flex overflow-hidden rounded-lg bg-[#1A1A1A] border border-black">
+            {/* Priority bar */}
+            <div
+                className={`
             absolute inset-y-0 left-0 w-6
             ${PRIORITY_COLORS[prio]}
             flex flex-col items-center justify-center
           `}
-        >
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={increase}
-            disabled={idx === PRIORITIES.length - 1}
-            className="p-0 hover:bg-transparent focus:ring-0"
-          >
-            <ChevronUp className="h-4 w-4 text-gray-400" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={decrease}
-            disabled={idx === 0}
-            className="p-0 hover:bg-transparent focus:ring-0"
-          >
-            <ChevronDown className="h-4 w-4 text-gray-400" />
-          </Button>
-        </div>
-  
-        {/* Main content */}
-        <div className="flex-1 pl-6 flex flex-col">
-          <CardHeader className="pb-0">
-            <CardTitle className="text-base line-clamp-2 text-white">
-              {title}
-            </CardTitle>
-          </CardHeader>
-  
-          <CardContent className="pt-2 pb-1">
-            {/* only one root per branch, so no siblings without a wrapper */}
-            {descriptionImageSrc && (
-              <div className="relative h-48 w-full rounded-md overflow-hidden mb-2">
-                <Image
-                  src={descriptionImageSrc}
-                  alt="Post image"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            )}
-            {descriptionText && (
-              <p className="text-sm text-gray-200 line-clamp-3 mb-2">
-                {descriptionText}
-              </p>
-            )}
-          </CardContent>
-  
-          <CardFooter className="pt-0">
-            <div className="w-full flex justify-between text-xs text-gray-400">
-              <span>💬 {commentsCount} comments</span>
-              <span>Status: {status}</span>
+            >
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={increase}
+                    disabled={idx === PRIORITIES.length - 1}
+                    className="p-0 hover:bg-transparent focus:ring-0"
+                >
+                    <ChevronUp className="h-4 w-4 text-gray-400" />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={decrease}
+                    disabled={idx === 0}
+                    className="p-0 hover:bg-transparent focus:ring-0"
+                >
+                    <ChevronDown className="h-4 w-4 text-gray-400" />
+                </Button>
             </div>
-          </CardFooter>
-        </div>
-      </Card>
-    )
-  }
-  
+
+            {/* Main content */}
+            <div
+                className="flex-1 pl-6 flex flex-col"
+                onClick={() => handleClick(id)}
+            >
+                <CardHeader className="pb-0">
+                    <CardTitle className="text-base line-clamp-2 text-white">
+                        {title}
+                    </CardTitle>
+                </CardHeader>
+
+                <CardContent className="pt-2 pb-1">
+                    {/* only one root per branch, so no siblings without a wrapper */}
+                    {descriptionImageSrc && (
+                        <div className="relative h-48 w-full rounded-md overflow-hidden mb-2">
+                            <Image
+                                src={descriptionImageSrc}
+                                alt="Post image"
+                                fill
+                                className="object-cover"
+                            />
+                        </div>
+                    )}
+                    {descriptionText && (
+                        <p className="text-sm text-gray-200 line-clamp-3 mb-2">
+                            {descriptionText}
+                        </p>
+                    )}
+                </CardContent>
+
+                <CardFooter className="pt-0">
+                    <div className="w-full flex justify-between text-xs text-gray-400">
+                        <span>💬 {commentsCount} comments</span>
+                        <span>Status: {status}</span>
+                    </div>
+                </CardFooter>
+            </div>
+        </Card>
+    );
+}
