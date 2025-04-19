@@ -1,5 +1,6 @@
 import CommentModel from "../../models/comment.model.js";
 import PostModel from "../../models/post.model.js";
+import UserModel from "../../models/user.model.js";
 
 // export const createPost = async(req,res)=>{
 //     try{
@@ -18,10 +19,10 @@ import PostModel from "../../models/post.model.js";
 export const createPost = async(req,res)=>{
     try{
         const userId = req.user._id;
-        const {title,description,tag} = req.body;
+        let {title,description,tag,latitude,longitude} = req.body;
         const img=req.file;
-        const latitude = parseFloat(req.body.latitude);
-        const longitude = parseFloat(req.body.longitude);
+        latitude = parseFloat(req.body.latitude);
+        longitude = parseFloat(req.body.longitude);
         if(!title || !description || !tag){
             return res.status(400).json({
                 message : "Please provide title , description and tag"
@@ -32,7 +33,9 @@ export const createPost = async(req,res)=>{
             title,
             description,
             tag,
-            user : userId
+            user : userId,
+            latitude,
+            longitude
         }
         if(img){
             // if user has uploaded an image to the issue
