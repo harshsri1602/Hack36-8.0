@@ -346,7 +346,6 @@ export const ViewRegion = async(req,res) => {
 export const PostById = async(req,res)=>{
     try {
         const {id} = req.params;
-        const userId = req.user._id;
         const post = await PostModel.findById(id).populate('comments');
 
         if(!post){
