@@ -24,6 +24,7 @@
         "embla-carousel-react": "^8.6.0",
         "express": "^5.1.0",
         "express-session": "^1.18.1",
+        "framer-motion": "^12.7.4",
         "jsonwebtoken": "^9.0.2",
         "leaflet.heat": "^0.2.0",
         "lucide-react": "^0.501.0",
