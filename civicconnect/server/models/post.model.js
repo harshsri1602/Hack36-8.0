@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const post_schema = new mongoose.Schema({
+const PostSchema = new mongoose.Schema({
     title:{
         type:String,
         required:true,
@@ -8,21 +8,15 @@ const post_schema = new mongoose.Schema({
     description:{
         type:String,
     },
-    img:[{
+    images:[{
         type:String
     }],
-    tags:[{
-        type:String,
-    }],
+    tag:{type : String},
     post_date:{
         type:Date,
         default:Date.now()
     },
-    status:{
-        type:String,
-        enum:['Immediate','Serious','Normal'],
-        required:true,
-    },
+    sever
     state:{
         type:String,
         enum:['open','solved'],
@@ -48,5 +42,5 @@ const post_schema = new mongoose.Schema({
     }],
 });
 
-const Post_model = mongoose.model('Post',post_schema);
-export default Post_model
+const PostModel = mongoose.model('Post',PostSchema);
+export default PostModel;

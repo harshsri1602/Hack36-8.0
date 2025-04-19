@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import {v2 as cloudinary} from 'cloudinary';
 import validator from 'validator'
-import UserModel from '../../models/user.model';
+import UserModel from '../../models/user.model.js';
 
 export const userRegister = async(req,res)=>{
     try {
