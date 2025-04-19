@@ -1,5 +1,5 @@
 import express from 'express';
-import { userLogin, userRegister } from '../controllers/user/user.authController.js';
+import { logoutUser, userLogin, userRegister } from '../controllers/user/user.authController.js';
 import { CreateComment, createPost, VoteComment, VotePost , viewAllUserPosts , deletePost, ViewRegion} from '../controllers/user/user.postModelController.js';
 import authUser from '../middleware/authUser.js';
 //import 
@@ -14,5 +14,6 @@ UserRouter.post('/comment',authUser,CreateComment);
 UserRouter.post('/vote',authUser,VotePost);
 UserRouter.post('/voteComment',authUser,VoteComment);
 UserRouter.get('/viewRegion',authUser,ViewRegion);
+UserRouter.post('/logout',logoutUser);
 
 export default UserRouter;

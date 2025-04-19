@@ -7,21 +7,31 @@ import memorystore from 'memorystore';
 import cookieParser from 'cookie-parser';
 import { connectCloudinary } from './config/cloudinary.js';
 import UserRouter from './routes/user.routes.js';
+import AdminRouter from './routes/admin.routes.js';
 const MemoryStore = memorystore(session); // This is to prevent memory leaks in session storage by providing a more efficient in-memory store than the default MemoryStore, with optional cleanup of expired sessions.
 
 dotenv.config();
 connectDB();
 connectCloudinary();
 const app = express();
-app.use(cors());
+
+// Middleware
+app.use(cors({
+    origin:'http://localhost:3000',
+    credentials:true,
+}));
 app.use(express.json());
 app.use(cookieParser());
+
+// Routes
 app.use('/api/v1/user',UserRouter);
+app.use('/api/v1/admin',AdminRouter);
 
 
 app.get("/", (req, res) => {
     res.send("Civic Connect API is running");
 });
+
 app.listen(process.env.PORT || 8000, () => {
     console.log(`server is running on port ${process.env.PORT || 8000}`);
 });

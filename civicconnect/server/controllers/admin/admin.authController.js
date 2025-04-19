@@ -4,6 +4,8 @@ import {v2 as cloudinary} from 'cloudinary';
 import validator from 'validator'
 import AdminModel from '../../models/admin.model.js';
 import PostModel from '../../models/post.model.js';
+import { generateTokenAndSetCookie } from '../../utils/generateTokenandSetCookies.js';
+import SolutionModel from '../../models/solution.model.js';
 
 export const AdminRegister = async(req,res)=>{
     try {
@@ -75,12 +77,35 @@ export const AdminLogin = async(req,res)=>{
     }
 }
 
-export const TakeProblem = async(req,res)=>{
+export const logoutUser = async (req, res) => {
+    try {
+        // Clear the cookie
+        res.clearCookie('jwt', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'Strict',
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: 'User logged out successfully'
+        });
+    } catch (error) {
+        console.error('Logout error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Something went wrong during logout'
+        });
+    }
+};
+
+export const AcceptProblem = async(req,res)=>{
     try {
         const {post_id} = req.body;
         const admin = req.admin;
-        const post = await PostModel.findByIdAndUpdate({post_id},{
+        const post = await PostModel.findByIdAndUpdate(post_id,{
             admin_taken:admin._id,
+            state:'IN PROGRESS'
         });
         const adminChange = await AdminModel.findByIdAndUpdate(admin._id,{
             $push : {posts: post._id}
@@ -93,14 +118,20 @@ export const TakeProblem = async(req,res)=>{
     }
 }
 
-export const updateStatus = async(req,res)=>{
+export const UpdateSolution = async(req,res)=>{
     try {
         const admin = req.admin;
-        const {post_id,state} = req.body;
+        const {post_id,title} = req.body;
+        const img=req.file;
+        const imgUpload = await cloudinary.uploader.upload(img.path,{resource_type:"image"});
+        const imgURL = imgUpload.secure_url;
+        const solution = new SolutionModel({description:title,img:imgURL,post:post_id});
+        await solution.save();
         const post = await PostModel.findByIdAndUpdate(post_id,{
-            state:state
+            state:'ACTION TAKEN',
+            solution:solution._id
         });
-        return res.status(201).json({success:true,message:'Updated status of problem'})
+        return res.status(201).json({success:true,message:'Updated status of problem'});
     } catch (error) {
         console.error(error);
         return res.status(500).json({success:false,message:error.message});

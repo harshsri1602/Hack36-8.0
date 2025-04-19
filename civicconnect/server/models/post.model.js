@@ -45,7 +45,8 @@ const PostSchema = new mongoose.Schema({
     solution:[{
         // this is the solution posted by the admin after resolving a problem
         // feedback by users on this solution posted by admin is based on the number of upviotes and downvotes received on this comment
-        type:String
+        type:mongoose.Schema.Types.ObjectId,
+        ref:'Solution'
     }],
     pincode:{
         type:String,
