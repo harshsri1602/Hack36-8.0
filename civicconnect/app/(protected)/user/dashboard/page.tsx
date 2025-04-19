@@ -16,10 +16,6 @@ const LATEST = [
 ];
 
 const HomePage: NextPage = () => {
-    const { user, setUser } = useUser();
-    useEffect(() => {
-        console.log(user);
-    }, []);
     return (
         <div className="min-h-screen bg-black text-white">
             <div
