@@ -1,6 +1,7 @@
 import { ifError } from "assert";
 import CommentModel from "../../models/comment.model.js";
 import PostModel from "../../models/post.model.js";
+import {v2 as cloudinary} from 'cloudinary';
 import UserModel from "../../models/user.model.js";
 
 // export const createPost = async(req,res)=>{
@@ -20,10 +21,11 @@ import UserModel from "../../models/user.model.js";
 export const createPost = async(req,res)=>{
     try{
         const userId = req.user._id;
-        let {title,description,tag,latitude,longitude} = req.body;
-        const img=req.file;
-        latitude = parseFloat(req.body.latitude);
-        longitude = parseFloat(req.body.longitude);
+        let { title, description, tag, latitude, longitude } = req.body;
+
+        latitude = parseFloat(latitude);
+        longitude = parseFloat(longitude);
+
         if(!title || !description || !tag){
             return res.status(400).json({
                 message : "Please provide title , description and tag!"
@@ -34,15 +36,19 @@ export const createPost = async(req,res)=>{
             title,
             description,
             tag,
-            user : userId,
+            user: userId,
             latitude,
-            longitude
-        }
-        if(img){
-            // if user has uploaded an image to the issue
-            const imgUpload = await cloudinary.uploader.upload(img.path,{resource_type:"image"});
-            const imgURL = imgUpload.secure_url;
-            postData.images = [imgURL];
+            longitude,
+            images: []
+        };
+
+        if (req.files && req.files.length > 0) {
+            const uploadPromises = req.files.map(file =>
+                cloudinary.uploader.upload(file.path, { resource_type: "image" })
+            );
+
+            const uploadResults = await Promise.all(uploadPromises);
+            postData.images = uploadResults.map(result => result.secure_url);
         }
 
         const newPost = new PostModel(postData);
@@ -50,21 +56,22 @@ export const createPost = async(req,res)=>{
 
         await UserModel.findByIdAndUpdate(
             userId,
-            {$push : {posts : newPost._id}}
-        )
+            { $push: { posts: newPost._id } },
+            { new: true }
+        );
 
         return res.status(200).json({
-            message : "User successfully created a post!",
-            post : newPost
-        })
-
-    } catch(error){
+            message: "User successfully created a post!",
+            post: newPost
+        });
+        
+    } catch (error) {
         console.error(error);
         return res.status(500).json({
-            message : "Internal Server Error!"
-        })
+            message: "Internal Server Error!"
+        });
     }
-}
+};
 
 // route for user to find all the posts he has posted (works on postman)
 export const viewAllUserPosts = async(req,res)=>{
@@ -307,6 +314,7 @@ export const VoteComment = async (req, res) => {
 export const ViewRegion = async(req,res) => {
     try {
         const pincode = req.user.address.pincode;
+        //const posts = await PostModel.find({pincode : pincode}).populate('comments');
         const posts = await PostModel.find({pincode : pincode}).populate('comments');
         if(!posts){
             return res.status(200).json({success:true,message:"No problems in your region"});
@@ -314,6 +322,23 @@ export const ViewRegion = async(req,res) => {
         else{
             return res.status(200).json({success:true,posts});
         }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Something went wrong while voting on comment" });
+    }
+}
+
+export const PostById = async(req,res)=>{
+    try {
+        const {id} = req.params;
+        const userId = req.user._id;
+        const post = await PostModel.findById(postId);
+        if(!post){
+            return res.status(404).json({
+                message : "The given post does not exist!"
+            })
+        }
+        return res.status(200).json({success:true,post});   
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Something went wrong while voting on comment" });

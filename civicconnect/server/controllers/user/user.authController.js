@@ -114,3 +114,25 @@ export const updateProfile = async(req,res) => {
         res.status(500).json({success:false,message:error.message});
     }
 }
+
+export const logoutUser = async (req, res) => {
+    try {
+        // Clear the cookie
+        res.clearCookie('jwt', {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'Strict',
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: 'User logged out successfully'
+        });
+    } catch (error) {
+        console.error('Logout error:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Something went wrong during logout'
+        });
+    }
+};

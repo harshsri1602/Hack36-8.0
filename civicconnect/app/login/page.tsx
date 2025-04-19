@@ -29,7 +29,6 @@ type LoginData = z.infer<typeof loginSchema>;
 export default function LoginPage() {
     const router = useRouter();
     const { user, setUser } = useUser();
-
     const form = useForm<LoginData>({
         resolver: zodResolver(loginSchema),
         defaultValues: {
