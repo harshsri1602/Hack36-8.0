@@ -21,6 +21,7 @@ import UserModel from "../../models/user.model.js";
 export const createPost = async(req,res)=>{
     try{
         const userId = req.user._id;
+        const pincode = req.user.address.pincode;
         let { title, description, tag, latitude, longitude } = req.body;
 
         latitude = parseFloat(latitude);
@@ -36,6 +37,7 @@ export const createPost = async(req,res)=>{
             title,
             description,
             tag,
+            pincode,
             user: userId,
             latitude,
             longitude,
