@@ -1,5 +1,5 @@
 import express from 'express';
-import { logoutUser, userLogin, userRegister } from '../controllers/user/user.authController.js';
+import { getUser, logoutUser, userLogin, userRegister } from '../controllers/user/user.authController.js';
 import { CreateComment, createPost, VoteComment, VotePost , viewAllUserPosts , deletePost, ViewRegion, PostById} from '../controllers/user/user.postModelController.js';
 import authUser from '../middleware/authUser.js';
 import { uploadImages } from '../middleware/multer.js';
@@ -16,6 +16,7 @@ UserRouter.post('/comment',authUser,CreateComment);
 UserRouter.post('/vote',authUser,VotePost);
 UserRouter.post('/voteComment',authUser,VoteComment);
 UserRouter.get('/viewRegion',authUser,ViewRegion);
+UserRouter.get('/:id',getUser)
 UserRouter.post('/logout',logoutUser);
 
 export default UserRouter;

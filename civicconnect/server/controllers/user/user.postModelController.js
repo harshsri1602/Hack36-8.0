@@ -256,7 +256,8 @@ export const PostById = async(req,res)=>{
     try {
         const {id} = req.params;
         const userId = req.user._id;
-        const post = await PostModel.findById(postId);
+        const post = await PostModel.findById(id).populate('comments');
+
         if(!post){
             return res.status(404).json({
                 message : "The given post does not exist!"
