@@ -9,7 +9,7 @@ UserRouter.post('/register',userRegister);
 UserRouter.post('/login',userLogin);
 UserRouter.post('/postIssue',authUser,createPost);
 UserRouter.get('/viewAllPosts',authUser,viewAllUserPosts);
-UserRouter.delete('/deletePost/:postId',deletePost);
+UserRouter.delete('/deletePost/:postId',authUser,deletePost);
 UserRouter.post('/comment',authUser,CreateComment);
 UserRouter.post('/vote',authUser,VotePost);
 UserRouter.post('/voteComment',authUser,VoteComment);

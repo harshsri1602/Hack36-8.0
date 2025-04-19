@@ -25,7 +25,7 @@ export const createPost = async(req,res)=>{
         longitude = parseFloat(req.body.longitude);
         if(!title || !description || !tag){
             return res.status(400).json({
-                message : "Please provide title , description and tag"
+                message : "Please provide title , description and tag!"
             })
         }
 
@@ -91,7 +91,7 @@ export const viewAllUserPosts = async(req,res)=>{
     }
 }
 
-// route for a user to delete a post
+// route for a user to delete a post(works , tested on postman)
 export const deletePost = async(req,res)=>{
     try{
         const {postId} = req.params;
@@ -107,7 +107,7 @@ export const deletePost = async(req,res)=>{
         // delete this post from the user
         await UserModel.findByIdAndUpdate(
             userId,
-            {$pull : {posts : postId}}
+            {$pull : {posts : postId,interactedPosts : {postId : postId}}}
         )
 
         // now delete all the associated comments to this post (NOT DONE YET)
@@ -180,18 +180,61 @@ export const VotePost = async (req, res) => {
         const post = await PostModel.findById(post_id);
         if (!post) return res.status(404).json({ error: "Post not found" });
         // Input of votetype should be 0 1 2 3
+
+        let flag=false;
+
+        let checkPreviousInteraction = await UserModel.findOne({_id : userId , "interactedPosts.postId" : post_id}).select('interactedPosts');
+        if(checkPreviousInteraction){
+            flag=true;
+            // user has already voted on this post
+            // nullify the effect of the previous vote 
+            
+            const previousReaction = checkPreviousInteraction.interactedPosts.find(item => item.postId.toString() === post_id.toString());
+            if(previousReaction.reaction === 0){
+                post.lowCount-=1;
+            }
+            else if(previousReaction.reaction === 1){
+                post.mediumCount-=1;
+            }
+            else if(previousReaction.reaction === 2){
+                post.highCount-=1;
+            }
+            else{
+                post.criticalCount-=1;
+            }
+        }
+        let currentReaction;
         if (voteType === 0) {
+            currentReaction = 0;
             post.lowCount += 1;
         } else if (voteType === 1) {
+            currentReaction=1;
             post.mediumCount += 1;
         } else if(voteType===2){
+            currentReaction=2;
             post.highCount += 1; 
         } else if(voteType===3){
+            currentReaction=3;
             post.criticalCount += 1; 
         } else {
             return res.status(400).json({ error: "Invalid vote type" });
         }
-
+        
+        if(!flag){
+            // user voted on this post for the first time , just add the reaction
+            await UserModel.findOneAndUpdate(
+                {_id : userId },
+                {$push : {interactedPosts : {postId : post_id,reaction : currentReaction}}}
+            )
+        }
+        else{
+            // user voted on this post b4 , just update the reaction
+            await UserModel.findOneAndUpdate(
+                {_id : userId , "interactedPosts.postId" : post_id},
+                {$set : {"interactedPosts.$.reaction" : currentReaction}}
+            )
+        }
+        
         await post.save();
         res.status(200).json({ message: "Vote registered", post:post });
     } catch (error) {
@@ -232,7 +275,7 @@ export const VoteComment = async (req, res) => {
 export const ViewRegion = async(req,res) => {
     try {
         const pincode = req.user.address.pincode;
-        const posts = await PostModel.find({pincode : pincode});
+        const posts = await PostModel.find({pincode : pincode}).populate('comments');
         if(!posts){
             return res.status(200).json({success:true,message:"No problems in your region"});
         }

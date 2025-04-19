@@ -29,6 +29,14 @@ const user_Schema = new mongoose.Schema({
             pincode:'',
         }
     },
+    interactedPosts : [{
+        postId : {type : mongoose.Schema.Types.ObjectId,ref:'Post'},
+        reaction : {type : Number}
+    }], // this is to ensure that a user is not able to do multiple votes for a post
+    interactedComments : [{
+        commentId : {type : mongoose.Schema.Types.ObjectId,ref:'Comment'},
+        reaction : {type : Number}
+    }], // this is to ensure that a user is not able to do multiple votes for a comment
     banned:{
         type:Boolean,
         default:false,
