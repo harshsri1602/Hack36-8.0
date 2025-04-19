@@ -16,7 +16,6 @@ L.Icon.Default.mergeOptions({
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
 import { Button } from "@/components/ui/button";
 import {
     Form,
@@ -28,14 +27,21 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+
+import {
     Carousel,
     CarouselContent,
     CarouselItem,
     CarouselNext,
     CarouselPrevious,
 } from "@/components/ui/carousel";
-
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import MapWidget from "@/components/ui/user/MapWidget";
 
 const ACCEPTED_IMAGE_TYPES = [
     "image/jpeg",
@@ -58,29 +64,10 @@ const postSchema = z.object({
                 message: "Image should be .jpg, .jpeg, .png or .webp",
             }
         ),
+    tags: z.string().min(1, "Please select a tag"),
 });
 
-type PostForm = z.infer<typeof postSchema>;
-
-const LocationMarker = ({
-    onSelect,
-}: {
-    onSelect: (latlng: { lat: number; lng: number }) => void;
-}) => {
-    const [pos, setPos] = useState<{ lat: number; lng: number } | null>(null);
-
-    useMapEvents({
-        click(e) {
-            setPos(e.latlng);
-            onSelect(e.latlng);
-            console.log("Picked location:", e.latlng);
-        },
-    });
-
-    return pos ? <Marker position={pos} /> : null;
-};
-
-const CreatePostPage: React.FC = () => {
+const CreatePostPage = () => {
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [location, setLocation] = useState<{
         lat: number;
@@ -93,6 +80,7 @@ const CreatePostPage: React.FC = () => {
             title: "",
             description: "",
             images: undefined,
+            tags: "Other",
         },
     });
 
@@ -166,7 +154,50 @@ const CreatePostPage: React.FC = () => {
                             )}
                         />
 
-                        {/* Image Upload Field */}
+                        <FormField
+                            control={form.control}
+                            name="tags"
+                            render={({ field }) => (
+                                <FormItem className="relative flex flex-col gap-y-1">
+                                    <FormLabel className="text-white">
+                                        Tags
+                                    </FormLabel>
+                                    <FormControl>
+                                        <Select
+                                            onValueChange={field.onChange}
+                                            defaultValue={field.value}
+                                        >
+                                            <SelectTrigger className="text-white bg-transparent border w-full">
+                                                <SelectValue placeholder="Select a tag" />
+                                            </SelectTrigger>
+                                            <SelectContent className="bg-[#1A1A1A] text-white">
+                                                <SelectItem value="road">
+                                                    Road
+                                                </SelectItem>
+                                                <SelectItem value="domestic">
+                                                    Domestic
+                                                </SelectItem>
+                                                <SelectItem value="electricity">
+                                                    Electricity
+                                                </SelectItem>
+                                                <SelectItem value="utility">
+                                                    Utility
+                                                </SelectItem>
+                                                <SelectItem value="other">
+                                                    Other
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </FormControl>
+                                    {form.formState.errors.tags && (
+                                        <FormMessage className="absolute text-red-500 text-sm -bottom-6 left-0">
+                                            {form.formState.errors.tags.message}
+                                        </FormMessage>
+                                    )}
+                                </FormItem>
+                            )}
+                        />
+
                         <FormField
                             control={form.control}
                             name="images"
@@ -261,6 +292,7 @@ const CreatePostPage: React.FC = () => {
                     </form>
                 </Form>
             </div>
+            <MapWidget />
         </div>
     );
 };
