@@ -1,6 +1,6 @@
 import express from 'express';
 import { userLogin, userRegister } from '../controllers/user/user.authController.js';
-import { CreateComment, createPost, VoteComment, VotePost , viewAllUserPosts , deletePost} from '../controllers/user/user.postModelController.js';
+import { CreateComment, createPost, VoteComment, VotePost , viewAllUserPosts , deletePost, ViewRegion} from '../controllers/user/user.postModelController.js';
 import authUser from '../middleware/authUser.js';
 //import 
 const UserRouter= express.Router();
@@ -13,5 +13,6 @@ UserRouter.delete('/deletePost/:postId',deletePost);
 UserRouter.post('/comment',authUser,CreateComment);
 UserRouter.post('/vote',authUser,VotePost);
 UserRouter.post('/voteComment',authUser,VoteComment);
+UserRouter.get('/viewRegion',authUser,ViewRegion);
 
 export default UserRouter;
