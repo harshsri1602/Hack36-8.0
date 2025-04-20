@@ -57,7 +57,8 @@ export const createPost = async(req,res)=>{
         const newPost = new PostModel(postData);
         await newPost.save();
 
-        postTitleTrie.insert(title, newPost._id);
+        console.log(title);
+        postTitleTrie.insert(title.toLowerCase(), newPost._id);
 
         await UserModel.findByIdAndUpdate(
             userId,
@@ -115,6 +116,8 @@ export const deletePost = async(req,res)=>{
                 message : "The given post does not exist!"
             })
         }
+
+        postTitleTrie.delete(post.title, postId);
 
         // first delete all the dependicies of all this post
         // delete this post from the user
@@ -472,14 +475,17 @@ export const removePostVote = async(req,res)=>{
 // route related to searching a post
 export const searchPosts = async(req, res) => {
     try {
-        const { query } = req.body;  // The search query (e.g., prefix to search for)
+        //const { query } = req.body;  // The search query (e.g., prefix to search for)
+        const query = req.query.prefix;
+        console.log(typeof(query.toLowerCase()));
+        console.log(req.user.address.pincode);
 
         if (!query) {
             return res.status(400).json({ message: "Please provide a search query!" });
         }
 
         // Search the Trie for posts that start with the given query (prefix)
-        const postsMatchingPrefix = postTitleTrie.search(query);
+        const postsMatchingPrefix = postTitleTrie.search(query.toLowerCase());
 
         // If no posts are found
         if (postsMatchingPrefix.length === 0) {
@@ -490,9 +496,15 @@ export const searchPosts = async(req, res) => {
         const postIds = postsMatchingPrefix.map(post => post.postId);
         const posts = await PostModel.find({ '_id': { $in: postIds } });
 
+        const filteredPosts = posts.filter(post => post.pincode === req.user.address.pincode);
+
+        if (filteredPosts.length === 0) {
+            return res.status(404).json({ message: "No posts found with the same pincode." });
+        }
+
         return res.status(200).json({
             message: "Posts found",
-            posts
+            filteredPosts
         });
 
     } catch (error) {

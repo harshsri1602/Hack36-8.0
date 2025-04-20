@@ -1,11 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-    ChevronUp,
-    ChevronDown,
-    Loader2, // 👈 Spinner icon
-} from "lucide-react";
+import { ChevronUp, ChevronDown, Loader2 } from "lucide-react";
 
 import {
     Card,
@@ -151,11 +147,11 @@ export function PostCard({
 
                 <CardContent className="pt-2 pb-1">
                     {descriptionImageSrc && (
-                        <div className="relative h-48 w-full rounded-md overflow-hidden mb-2">
+                        <div className="relative h-48 rounded-md w-full overflow-hidden mb-2 flex items-center justify-center">
                             <img
                                 src={descriptionImageSrc}
                                 alt="Post image"
-                                className="object-cover w-full h-full"
+                                className="object-cover h-full"
                             />
                         </div>
                     )}
