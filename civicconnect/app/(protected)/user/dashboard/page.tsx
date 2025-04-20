@@ -3,16 +3,17 @@
 
 import { NextPage } from "next";
 import dynamic from "next/dynamic";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useUser } from "@/context/userContext";
 import { PostCard } from "@/components/ui/user/PostCard";
 import LatestPostsSidebar from "@/components/ui/user/LatestPostsSidebar";
+import { Input } from "@/components/ui/input";
+import Link from "next/link";
 
 // ── Dynamic import of MapWidget (no SSR) ─────────────────────────────
-const MapWidget = dynamic(
-  () => import("@/components/ui/user/MapWidget"),
-  { ssr: false }
-);
+const MapWidget = dynamic(() => import("@/components/ui/user/MapWidget"), {
+    ssr: false,
+});
 
 interface ApiPost {
     _id: string;
@@ -32,6 +33,9 @@ const HomePage: NextPage = () => {
     const [posts, setPosts] = useState<ApiPost[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [searchResults, setSearchResults] = useState<ApiPost[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
 
     const latestPosts = useMemo(
         () =>
@@ -46,9 +50,55 @@ const HomePage: NextPage = () => {
         [posts]
     );
 
+    const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
     useEffect(() => {
-        console.log(posts);
-    }, [posts]);
+        if (!searchQuery.trim()) {
+            setSearchResults([]);
+            return;
+        }
+
+        setIsSearching(true);
+
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+
+        debounceRef.current = setTimeout(async () => {
+            console.log(searchQuery);
+            try {
+                const res = await fetch(
+                    `http://localhost:8000/api/v1/user/searchPosts?prefix=${searchQuery}`,
+                    {
+                        method: "GET",
+                        credentials: "include",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                    }
+                );
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    console.log(data.message);
+                }
+
+                setSearchResults(
+                    Array.isArray(data.filteredPosts)
+                        ? data.filteredPosts.slice(0, 5)
+                        : []
+                );
+            } catch (err) {
+                console.error("Search error:", err);
+                setSearchResults([]);
+            } finally {
+                setIsSearching(false);
+            }
+        }, 500); // 500ms debounce
+
+        return () => {
+            if (debounceRef.current) clearTimeout(debounceRef.current);
+        };
+    }, [searchQuery]);
 
     useEffect(() => {
         if (!user?.address?.pincode) {
@@ -93,6 +143,42 @@ const HomePage: NextPage = () => {
             >
                 {/* POSTS in first column */}
                 <main className="row-start-1 col-start-1 space-y-8 pl-1">
+                    <div className="ml-51 transform -translate-x-1/2 z-50 w-full max-w-md px-4 relative">
+                        <div className="bg-[#1F1F1F] border border-gray-700 rounded-2xl shadow-lg p-4">
+                            <Input
+                                placeholder="Search posts…"
+                                className="bg-[#2A2A2A] text-white"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                            {searchQuery && (
+                                <div className="absolute top-full left-0 w-full mt-2 rounded-lg bg-[#2A2A2A] border border-gray-700 shadow-lg overflow-hidden max-h-96 overflow-y-auto">
+                                    {isSearching ? (
+                                        <div className="px-4 py-2 text-sm text-gray-400">
+                                            Searching...
+                                        </div>
+                                    ) : searchResults.length > 0 ? (
+                                        searchResults.map((result) => (
+                                            <Link
+                                                key={result._id}
+                                                href={`/user/${result._id}`}
+                                                passHref
+                                            >
+                                                <div className="px-4 py-2 text-sm text-white hover:bg-gray-700 cursor-pointer">
+                                                    {result.title}
+                                                </div>
+                                            </Link>
+                                        ))
+                                    ) : (
+                                        <div className="px-4 py-2 text-sm text-gray-400">
+                                            No results found
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                     {loading ? (
                         <div>Loading posts…</div>
                     ) : error ? (
