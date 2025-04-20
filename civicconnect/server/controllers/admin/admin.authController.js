@@ -95,7 +95,7 @@ export const logoutUser = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: 'Something went wrong during logout'
-        });
+        }); 
     }
 };
 
@@ -120,10 +120,16 @@ export const AcceptProblem = async(req,res)=>{
 
 export const UpdateSolution = async(req,res)=>{
     try {
+        console.log(req);
         const admin = req.admin;
         const {post_id,title} = req.body;
-        const img=req.file;
-        const imgUpload = await cloudinary.uploader.upload(img.path,{resource_type:"image"});
+        const images=req.files?.[0];
+        if(!images){
+            return res.status(400).json({
+                message : "Image not uploaded!"
+            })
+        }
+        const imgUpload = await cloudinary.uploader.upload(images.path,{resource_type:"image"});
         const imgURL = imgUpload.secure_url;
         const solution = new SolutionModel({description:title,img:imgURL,post:post_id});
         await solution.save();
@@ -137,3 +143,27 @@ export const UpdateSolution = async(req,res)=>{
         return res.status(500).json({success:false,message:error.message});
     }
 }
+
+export const ViewRegion = async (req, res) => {
+    try {
+        const admin = req.admin;
+        console.log("hi")
+        // If the user is an admin, return all posts
+        let posts;
+        if (admin) {
+            posts = await PostModel.find().populate('comments'); // Admin sees all posts
+        } else {
+            const pincode = req.user.address.pincode;
+            posts = await PostModel.find({ pincode: pincode }).populate('comments');
+        }
+
+        if (!posts || posts.length === 0) {
+            return res.status(200).json({ success: true, message: "No problems found" });
+        } else {
+            return res.status(200).json({ success: true, posts });
+        }
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Something went wrong while fetching posts" });
+    }
+};
