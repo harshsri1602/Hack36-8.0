@@ -8,6 +8,7 @@ import { uploadImages } from '../middleware/multer.js';
 //import 
 const UserRouter= express.Router();
 
+UserRouter.get('/searchPosts',authUser,searchPosts);
 UserRouter.post('/register',userRegister);
 UserRouter.post('/login',userLogin);
 UserRouter.post('/postIssue',authUser,uploadImages,createPost);
@@ -22,6 +23,6 @@ UserRouter.get('/:id',getUser)
 UserRouter.post('/logout',logoutUser);
 UserRouter.post('/removePostVote/:postId',authUser,removePostVote);
 UserRouter.post('/removeCommentVote/:commentId',authUser,removeCommentVote);
-UserRouter.get('/searchPosts',authUser,searchPosts);
+
 
 export default UserRouter;
