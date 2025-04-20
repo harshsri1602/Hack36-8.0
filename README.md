@@ -10,11 +10,11 @@ It is a forum to connect individuals of the same community to discuss issues in 
 
 ## Demo Video Link:
 
-<a href="">Make a video</a>
+<a href="https://drive.google.com/file/d/1kxQUDxUlcFRRBDJGQND_GghwoU-zBwhA/view?usp=drive_link">Video Demo</a>
 
 ## Presentation Link:
 
-<a href="">Make a ppt</a>
+<a href="https://docs.google.com/presentation/d/1jJQqRY3jJCqHYYkOujuSXXic7NvApVMd_RsGC3KlmKU/mobilepresent?slide=id.g4e6ad56636_0_23">PPT link here</a>
 
 ## Table of Contents:
 
