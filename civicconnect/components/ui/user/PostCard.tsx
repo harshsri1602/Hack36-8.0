@@ -54,13 +54,12 @@ export function PostCard({
     vote,
 }: PostCardProps) {
     const router = useRouter();
-    const [idx, setIdx] = useState(0);
+    const [idx, setIdx] = useState<number | null>(null);
     const [loading, setLoading] = useState(false);
-    const prio = PRIORITIES[idx];
 
     useEffect(() => {
-        if (userVoted === true) {
-            setIdx(vote || 0);
+        if (userVoted && typeof vote === "number") {
+            setIdx(vote);
         }
     }, []);
 
@@ -87,13 +86,15 @@ export function PostCard({
     };
 
     const increase = () => {
-        if (idx < PRIORITIES.length - 1) {
+        if (idx === null) {
+            updateVote(0); // First vote
+        } else if (idx < PRIORITIES.length - 1) {
             updateVote(idx + 1);
         }
     };
 
     const decrease = () => {
-        if (idx > 0) {
+        if (idx !== null && idx > 0) {
             updateVote(idx - 1);
         }
     };
@@ -106,7 +107,11 @@ export function PostCard({
         <Card className="relative flex overflow-hidden rounded-lg bg-[#1A1A1A] border border-black">
             {/* Priority bar */}
             <div
-                className={`absolute inset-y-0 left-0 w-6 ${PRIORITY_COLORS[prio]} flex flex-col items-center justify-center`}
+                className={`absolute inset-y-0 left-0 w-6 ${
+                    idx !== null
+                        ? PRIORITY_COLORS[PRIORITIES[idx]]
+                        : "bg-gray-700"
+                } flex flex-col items-center justify-center`}
             >
                 <Button
                     variant="ghost"

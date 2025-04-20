@@ -20,7 +20,7 @@ type User = {
     email: string;
     isVerified: boolean;
     name: string;
-    phoneNumber: number;
+    phoneNumber: string;
     posts: [];
     profileImg: string;
 };
