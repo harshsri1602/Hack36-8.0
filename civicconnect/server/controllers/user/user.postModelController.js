@@ -117,6 +117,8 @@ export const deletePost = async(req,res)=>{
             })
         }
 
+        postTitleTrie.delete(post.title, postId);
+
         // first delete all the dependicies of all this post
         // delete this post from the user
         await UserModel.findByIdAndUpdate(
