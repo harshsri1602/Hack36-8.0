@@ -41,6 +41,12 @@ interface Comment {
     written_by: string;
 }
 
+interface Solution {
+    description: string;
+    _id: string;
+    img: string[];
+}
+
 interface Post {
     _id: string;
     title: string;
@@ -59,6 +65,7 @@ interface Post {
     mediumCount: number;
     highCount: number;
     criticalCount: number;
+    solution: Solution[];
 }
 
 const Page: React.FC = () => {
@@ -72,6 +79,7 @@ const Page: React.FC = () => {
     const [leftIdx, setLeftIdx] = useState(0);
     const [commentText, setCommentText] = useState("");
     const [commentLoading, setCommentLoading] = useState(false);
+    const [showSolution, setShowSolution] = useState(false);
 
     // Fetch the post
     useEffect(() => {
@@ -99,8 +107,12 @@ const Page: React.FC = () => {
                         post.criticalCount * 3) /
                         den
                 );
-                if (data.success) setPost(data.post);
-                else throw new Error(data.error || "Failed to load post");
+                if (data.success) {
+                    setPost(data.post);
+                    console.log(post);
+                } else {
+                    throw new Error(data.error || "Failed to load post");
+                }
             })
             .catch((err) => {
                 console.error("Error fetching post:", err);
@@ -193,17 +205,51 @@ const Page: React.FC = () => {
 
         try {
             setCommentLoading(true);
-            await fetch("http://localhost:8000/api/v1/user/comment", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                credentials: "include",
-                body: JSON.stringify({
-                    post_id: postId,
-                    comment: commentText.trim(),
-                }),
+            const res = await fetch(
+                "http://localhost:8000/api/v1/user/comment",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        post_id: postId,
+                        comment: commentText.trim(),
+                    }),
+                }
+            );
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed to add comment");
+
+            const newComment: Comment = data.comment;
+
+            // Add new commenter name if missing
+            if (!commenters[newComment.written_by]) {
+                const userRes = await fetch(
+                    `http://localhost:8000/api/v1/user/${newComment.written_by}`,
+                    {
+                        method: "GET",
+                        credentials: "include",
+                    }
+                );
+                const userData = await userRes.json();
+                setCommenters((prev) => ({
+                    ...prev,
+                    [newComment.written_by]: userData.name,
+                }));
+            }
+
+            // Append new comment to state
+            setPost((prev) => {
+                if (!prev) return prev;
+                return {
+                    ...prev,
+                    comments: [newComment, ...prev.comments],
+                };
             });
+
             setCommentText("");
         } catch (error) {
             console.error("Failed to submit comment:", error);
@@ -250,29 +296,52 @@ const Page: React.FC = () => {
                         {/* Map */}
                         {typeof post.latitude === "number" &&
                             typeof post.longitude === "number" && (
-                                <div className="h-64 w-full rounded-md overflow-hidden shadow-lg">
-                                    <MapContainer
-                                        center={[post.latitude, post.longitude]}
-                                        zoom={13}
-                                        className="h-full w-full"
+                                <div className="w-full rounded-md overflow-hidden shadow-lg relative h-64">
+                                    <div
+                                        className={`absolute inset-0 transition-opacity duration-300 ${
+                                            showSolution
+                                                ? "opacity-30 pointer-events-none"
+                                                : "opacity-100"
+                                        }`}
                                     >
-                                        <TileLayer
-                                            url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
-                                            attribution="© Stadia Maps, © OSM"
-                                        />
-                                        <Marker
-                                            position={[
+                                        <MapContainer
+                                            center={[
                                                 post.latitude,
                                                 post.longitude,
                                             ]}
-                                        />
-                                    </MapContainer>
+                                            zoom={13}
+                                            className="h-full w-full z-0"
+                                        >
+                                            <TileLayer
+                                                url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
+                                                attribution="© Stadia Maps, © OSM"
+                                            />
+                                            <Marker
+                                                position={[
+                                                    post.latitude,
+                                                    post.longitude,
+                                                ]}
+                                            />
+                                        </MapContainer>
+                                    </div>
                                 </div>
                             )}
 
                         {/* Description */}
                         {post.description && (
                             <p className="text-gray-200">{post.description}</p>
+                        )}
+
+                        {post.solution && post.solution.length > 0 && (
+                            <div className="mt-4">
+                                <Button
+                                    onClick={() => setShowSolution(true)}
+                                    variant="outline"
+                                    className="text-white"
+                                >
+                                    Show Solution
+                                </Button>
+                            </div>
                         )}
 
                         {/* Footer */}
@@ -342,6 +411,55 @@ const Page: React.FC = () => {
                     <p className="text-gray-500">No comments yet.</p>
                 )}
             </div>
+            {showSolution && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+                    <div className="bg-[#1F1F1F] text-white rounded-lg shadow-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto relative">
+                        {/* Close Button */}
+                        <button
+                            className="absolute top-3 right-4 text-gray-400 hover:text-white text-2xl"
+                            onClick={() => setShowSolution(false)}
+                        >
+                            &times;
+                        </button>
+
+                        {/* Modal Title */}
+                        <h2 className="text-xl font-semibold mb-6 text-center">
+                            Solution
+                        </h2>
+
+                        {/* Solutions */}
+                        {post.solution.map((sol) => (
+                            <div key={sol._id} className="mb-6 text-center">
+                                {/* Centered Description */}
+                                <p className="mb-4 text-sm text-gray-300">
+                                    {sol.description}
+                                </p>
+
+                                {/* Images with click-to-expand */}
+                                {sol.img?.length > 0 && (
+                                    <div className="flex flex-wrap justify-center gap-4">
+                                        {sol.img.map((url, i) => (
+                                            <a
+                                                key={i}
+                                                href={url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="block"
+                                            >
+                                                <img
+                                                    src={url}
+                                                    alt={`Solution ${i + 1}`}
+                                                    className="h-48 w-auto object-contain rounded hover:scale-105 transition-transform"
+                                                />
+                                            </a>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

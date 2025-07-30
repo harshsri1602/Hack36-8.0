@@ -1,15 +1,15 @@
 import { ifError } from "assert";
 import CommentModel from "../../models/comment.model.js";
 import PostModel from "../../models/post.model.js";
-import {v2 as cloudinary} from 'cloudinary';
+import { v2 as cloudinary } from "cloudinary";
 import UserModel from "../../models/user.model.js";
 import postTitleTrie from "../../utils/TrieIndex.js";
 
 // export const createPost = async(req,res)=>{
 //     try{
 //         const userid = req.user._id;
-        
-//         const {title,description,images,tag,status,} = 
+
+//         const {title,description,images,tag,status,} =
 //     } catch(error){
 //         console.error(error);
 //         return res.status(500).json({
@@ -19,8 +19,8 @@ import postTitleTrie from "../../utils/TrieIndex.js";
 // }
 
 // route for user to create a post (works on postman)
-export const createPost = async(req,res)=>{
-    try{
+export const createPost = async (req, res) => {
+    try {
         const userId = req.user._id;
         const pincode = req.user.address.pincode;
         let { title, description, tag, latitude, longitude } = req.body;
@@ -28,10 +28,10 @@ export const createPost = async(req,res)=>{
         latitude = parseFloat(latitude);
         longitude = parseFloat(longitude);
 
-        if(!title || !description || !tag){
+        if (!title || !description || !tag) {
             return res.status(400).json({
-                message : "Please provide title , description and tag!"
-            })
+                message: "Please provide title , description and tag!",
+            });
         }
 
         const postData = {
@@ -42,16 +42,18 @@ export const createPost = async(req,res)=>{
             user: userId,
             latitude,
             longitude,
-            images: []
+            images: [],
         };
 
         if (req.files && req.files.length > 0) {
-            const uploadPromises = req.files.map(file =>
-                cloudinary.uploader.upload(file.path, { resource_type: "image" })
+            const uploadPromises = req.files.map((file) =>
+                cloudinary.uploader.upload(file.path, {
+                    resource_type: "image",
+                })
             );
 
             const uploadResults = await Promise.all(uploadPromises);
-            postData.images = uploadResults.map(result => result.secure_url);
+            postData.images = uploadResults.map((result) => result.secure_url);
         }
 
         const newPost = new PostModel(postData);
@@ -68,81 +70,80 @@ export const createPost = async(req,res)=>{
 
         return res.status(200).json({
             message: "User successfully created a post!",
-            post: newPost
+            post: newPost,
         });
-        
     } catch (error) {
         console.error(error);
         return res.status(500).json({
-            message: "Internal Server Error!"
+            message: "Internal Server Error!",
         });
     }
 };
 
 // route for user to find all the posts he has posted (works on postman)
-export const viewAllUserPosts = async(req,res)=>{
-    try{
+export const viewAllUserPosts = async (req, res) => {
+    try {
         const userId = req.user._id;
         const userPinCode = req.user.address.pincode;
 
-        const allUserPosts = await UserModel.findById(userId).select('posts').populate('posts');
+        const allUserPosts = await UserModel.findById(userId)
+            .select("posts")
+            .populate("posts");
 
-        if(!allUserPosts){
+        if (!allUserPosts) {
             return res.status(404).json({
-                message : "No posts for the given user found"
-            })
+                message: "No posts for the given user found",
+            });
         }
 
         return res.status(200).json({
-            message : "All the posts by the user successfully fetched!",
-            allUserPosts
-        })
-    } catch(error){
+            message: "All the posts by the user successfully fetched!",
+            allUserPosts,
+        });
+    } catch (error) {
         console.error(error);
         return res.status(500).json({
-            message : "Internal Server Error!"
-        })
+            message: "Internal Server Error!",
+        });
     }
-}
+};
 
 // route for a user to delete a post(works , tested on postman)
-export const deletePost = async(req,res)=>{
-    try{
-        const {postId} = req.params;
+export const deletePost = async (req, res) => {
+    try {
+        const { postId } = req.params;
         const userId = req.user._id;
         const post = await PostModel.findById(postId);
-        if(!post){
+        if (!post) {
             return res.status(404).json({
-                message : "The given post does not exist!"
-            })
+                message: "The given post does not exist!",
+            });
         }
 
         postTitleTrie.delete(post.title, postId);
 
         // first delete all the dependicies of all this post
         // delete this post from the user
-        await UserModel.findByIdAndUpdate(
-            userId,
-            {$pull : {posts : postId,interactedPosts : {postId : postId}}}
-        )
+        await UserModel.findByIdAndUpdate(userId, {
+            $pull: { posts: postId, interactedPosts: { postId: postId } },
+        });
 
         // now delete all the associated comments to this post (NOT DONE YET)
         //await CommentModel.findByIdAndDelete({post_id: postId});
-        await CommentModel.deleteMany({post_id : postId});
+        await CommentModel.deleteMany({ post_id: postId });
         // now delete the post
         await PostModel.findByIdAndDelete(postId);
 
         return res.status(200).json({
-            message : "The given post is successfully deleted!"
-        })
-        
-    } catch(error){
+            message: "The given post is successfully deleted!",
+        });
+    } catch (error) {
         console.error(error);
         return res.status(500).json({
-            message : "Internal Server Error!"
-        })
+            message: "Internal Server Error!",
+        });
     }
-}
+};
 
 // route for user to add a comment to a post(works on postman)
 export const CreateComment = async (req, res) => {
@@ -150,23 +151,23 @@ export const CreateComment = async (req, res) => {
         const userId = req.user._id;
         const { post_id, comment } = req.body;
 
-        if(!post_id || !comment){
+        if (!post_id || !comment) {
             return res.status(400).json({
-                message : "Please provide the post and the comment!"
-            })
+                message: "Please provide the post and the comment!",
+            });
         }
 
         const post = await PostModel.findById(post_id);
-        if(!post){
+        if (!post) {
             return res.status(404).json({
-                message : "Post not found!"
-            })
+                message: "Post not found!",
+            });
         }
 
         const newComment = new CommentModel({
             post_id,
             written_by: userId,
-            comment
+            comment,
         });
 
         await newComment.save();
@@ -179,11 +180,13 @@ export const CreateComment = async (req, res) => {
 
         res.status(201).json({
             message: "Comment added successfully",
-            comment: newComment
+            comment: newComment,
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: "Something went wrong while creating the comment" });
+        res.status(500).json({
+            error: "Something went wrong while creating the comment",
+        });
     }
 };
 
@@ -201,28 +204,33 @@ export const VotePost = async (req, res) => {
         if (!post) return res.status(404).json({ error: "Post not found" });
         // Input of votetype should be 0 1 2 3
 
-        let flag=false;
+        let flag = false;
 
-        let checkPreviousInteraction = await UserModel.findOne({_id : userId , "interactedPosts.postId" : post_id}).select('interactedPosts');
-        const existingVoteIndex = post.votes.findIndex(v => v.userId.toString() === userId.toString());
-        
-        if(checkPreviousInteraction){
-            flag=true;
+        let checkPreviousInteraction = await UserModel.findOne({
+            _id: userId,
+            "interactedPosts.postId": post_id,
+        }).select("interactedPosts");
+        const existingVoteIndex = post.votes.findIndex(
+            (v) => v.userId.toString() === userId.toString()
+        );
+
+        if (checkPreviousInteraction) {
+            flag = true;
             // user has already voted on this post
-            // nullify the effect of the previous vote 
-            
-            const previousReaction = checkPreviousInteraction.interactedPosts.find(item => item.postId.toString() === post_id.toString());
-            if(previousReaction.reaction === 0){
-                post.lowCount-=1;
-            }
-            else if(previousReaction.reaction === 1){
-                post.mediumCount-=1;
-            }
-            else if(previousReaction.reaction === 2){
-                post.highCount-=1;
-            }
-            else{
-                post.criticalCount-=1;
+            // nullify the effect of the previous vote
+
+            const previousReaction =
+                checkPreviousInteraction.interactedPosts.find(
+                    (item) => item.postId.toString() === post_id.toString()
+                );
+            if (previousReaction.reaction === 0) {
+                post.lowCount -= 1;
+            } else if (previousReaction.reaction === 1) {
+                post.mediumCount -= 1;
+            } else if (previousReaction.reaction === 2) {
+                post.highCount -= 1;
+            } else {
+                post.criticalCount -= 1;
             }
         }
         let currentReaction;
@@ -230,36 +238,42 @@ export const VotePost = async (req, res) => {
             currentReaction = 0;
             post.lowCount += 1;
         } else if (voteType === 1) {
-            currentReaction=1;
+            currentReaction = 1;
             post.mediumCount += 1;
-        } else if(voteType===2){
-            currentReaction=2;
-            post.highCount += 1; 
-        } else if(voteType===3){
-            currentReaction=3;
-            post.criticalCount += 1; 
+        } else if (voteType === 2) {
+            currentReaction = 2;
+            post.highCount += 1;
+        } else if (voteType === 3) {
+            currentReaction = 3;
+            post.criticalCount += 1;
         } else {
             return res.status(400).json({ error: "Invalid vote type" });
         }
-        if(!flag){
+        if (!flag) {
             // user voted on this post for the first time , just add the reaction
             await UserModel.findOneAndUpdate(
-                {_id : userId },
-                {$push : {interactedPosts : {postId : post_id,reaction : currentReaction}}}
-            )
+                { _id: userId },
+                {
+                    $push: {
+                        interactedPosts: {
+                            postId: post_id,
+                            reaction: currentReaction,
+                        },
+                    },
+                }
+            );
             post.votes.push({ userId, voteType });
-        }
-        else{
+        } else {
             // user voted on this post b4 , just update the reaction
             await UserModel.findOneAndUpdate(
-                {_id : userId , "interactedPosts.postId" : post_id},
-                {$set : {"interactedPosts.$.reaction" : currentReaction}}
-            )
+                { _id: userId, "interactedPosts.postId": post_id },
+                { $set: { "interactedPosts.$.reaction": currentReaction } }
+            );
             post.votes[existingVoteIndex].voteType = voteType;
         }
-        
+
         await post.save();
-        res.status(200).json({ message: "Vote registered", post:post });
+        res.status(200).json({ message: "Vote registered", post: post });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Something went wrong while voting" });
@@ -275,107 +289,136 @@ export const VoteComment = async (req, res) => {
         if (!["upvote", "downvote"].includes(voteType)) {
             return res.status(400).json({ error: "Invalid vote type" });
         }
-        
+
         const comment = await CommentModel.findById(commentId);
-        if (!comment) return res.status(404).json({ error: "Comment not found" });
+        if (!comment)
+            return res.status(404).json({ error: "Comment not found" });
 
         if (!comment.upvotes) comment.upvotes = 0;
         if (!comment.downvotes) comment.downvotes = 0;
 
-        const existingVoteIndex = comment.votes.findIndex(v => v.userId.toString() === userId.toString());
-        let flag=false;
-        let checkPreviousInteraction = await UserModel.findOne({_id : userId , "interactedComments.commentId" : commentId}).select('interactedComments');
+        const existingVoteIndex = comment.votes.findIndex(
+            (v) => v.userId.toString() === userId.toString()
+        );
+        let flag = false;
+        let checkPreviousInteraction = await UserModel.findOne({
+            _id: userId,
+            "interactedComments.commentId": commentId,
+        }).select("interactedComments");
         let currentReaction;
-        if(checkPreviousInteraction && (existingVoteIndex !== -1)){
-            flag=true;
-            const previousReaction = checkPreviousInteraction.interactedComments.find(item => item.commentId.toString() === commentId.toString());
+        if (checkPreviousInteraction && existingVoteIndex !== -1) {
+            flag = true;
+            const previousReaction =
+                checkPreviousInteraction.interactedComments.find(
+                    (item) => item.commentId.toString() === commentId.toString()
+                );
             const previousVote = comment.votes[existingVoteIndex].voteType;
-            if(previousReaction.reaction === "upvote"){
-                comment.upvotes-=1;
-            }
-            else{
-                comment.downvotes-=1;
+            if (previousReaction.reaction === "upvote") {
+                comment.upvotes -= 1;
+            } else {
+                comment.downvotes -= 1;
             }
         }
 
         if (voteType === "upvote") {
-            currentReaction="upvote";
+            currentReaction = "upvote";
             comment.upvotes += 1;
         } else if (voteType === "downvote") {
-            currentReaction="downvote";
+            currentReaction = "downvote";
             comment.downvotes += 1;
         } else {
             return res.status(400).json({ error: "Invalid vote type" });
         }
 
-        if(!flag){
+        if (!flag) {
             await UserModel.findOneAndUpdate(
-                {_id : userId },
-                {$push : {interactedComments : {commentId : commentId,reaction : currentReaction}}}
-            )
+                { _id: userId },
+                {
+                    $push: {
+                        interactedComments: {
+                            commentId: commentId,
+                            reaction: currentReaction,
+                        },
+                    },
+                }
+            );
             comment.votes.push({ userId, voteType });
-        }
-        else{
+        } else {
             await UserModel.findOneAndUpdate(
-                {_id : userId , "interactedComments.commentId" : commentId},
-                {$set : {"interactedComments.$.reaction" : currentReaction}}
-            )
+                { _id: userId, "interactedComments.commentId": commentId },
+                { $set: { "interactedComments.$.reaction": currentReaction } }
+            );
             comment.votes[existingVoteIndex].voteType = voteType;
         }
 
         await comment.save();
-        res.status(200).json({ message: "Comment vote registered", comment:comment });
+        res.status(200).json({
+            message: "Comment vote registered",
+            comment: comment,
+        });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: "Something went wrong while voting on comment" });
+        res.status(500).json({
+            error: "Something went wrong while voting on comment",
+        });
     }
 };
 
 // this works , tested on postman
-export const ViewRegion = async(req,res) => {
+export const ViewRegion = async (req, res) => {
     try {
         const pincode = req.user.address.pincode;
         //const posts = await PostModel.find({pincode : pincode}).populate('comments');
-        const posts = await PostModel.find({pincode : pincode}).populate('comments');
-        if(!posts){
-            return res.status(200).json({success:true,message:"No problems in your region"});
-        }
-        else{
-            return res.status(200).json({success:true,posts});
+        const posts = await PostModel.find({ pincode: pincode }).populate(
+            "comments"
+        );
+        if (!posts) {
+            return res
+                .status(200)
+                .json({ success: true, message: "No problems in your region" });
+        } else {
+            return res.status(200).json({ success: true, posts });
         }
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: "Something went wrong while voting on comment" });
+        res.status(500).json({
+            error: "Something went wrong while voting on comment",
+        });
     }
-}
+};
 
-export const PostById = async(req,res)=>{
+export const PostById = async (req, res) => {
     try {
-        const {id} = req.params;
-        const post = await PostModel.findById(id).populate('comments');
+        const { id } = req.params;
+        const post = await PostModel.findById(id)
+            .populate("comments")
+            .populate("solution")
+            .populate("user", "name");
 
-        if(!post){
+        if (!post) {
             return res.status(404).json({
-                message : "The given post does not exist!"
-            })
+                message: "The given post does not exist!",
+            });
         }
-        return res.status(200).json({success:true,post});   
+        return res.status(200).json({ success: true, post });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: "Something went wrong while voting on comment" });
+        res.status(500).json({
+            error: "Something went wrong while voting on comment",
+        });
     }
-}
+};
 
-export const removeCommentVote = async(req,res)=>{
-    try{
+export const removeCommentVote = async (req, res) => {
+    try {
         const userId = req.user._id;
-        const {commentId} = req.params;
+        const { commentId } = req.params;
 
         const comment = await CommentModel.findById(commentId);
-        if(!comment){
+        if (!comment) {
             return res.status(404).json({
-                message : "Given comment does not exist!"
-            })
+                message: "Given comment does not exist!",
+            });
         }
 
         const user = await UserModel.findOne({
@@ -401,26 +444,25 @@ export const removeCommentVote = async(req,res)=>{
         await comment.save();
 
         await UserModel.updateOne(
-            {_id : userId},
-            {$pull : {interactedComments : {commentId : commentId}}}
-        )
+            { _id: userId },
+            { $pull: { interactedComments: { commentId: commentId } } }
+        );
 
         return res.status(200).json({
-            message : "vote from comment successfully removed!"
-        })
-
-    } catch(error){
+            message: "vote from comment successfully removed!",
+        });
+    } catch (error) {
         console.error(error);
         return res.status(500).json({
-            message : "Internal Server Error"
-        })
+            message: "Internal Server Error",
+        });
     }
-}
+};
 
-export const removePostVote = async(req,res)=>{
-    try{
+export const removePostVote = async (req, res) => {
+    try {
         const userId = req.user._id;
-        const {postId} = req.params;
+        const { postId } = req.params;
 
         const post = await PostModel.findById(postId);
         if (!post) {
@@ -440,7 +482,7 @@ export const removePostVote = async(req,res)=>{
 
         const interaction = user.interactedPosts.find(
             (item) => item.postId.toString() === postId.toString()
-        );  
+        );
 
         if (interaction.reaction === 0) {
             post.lowCount = Math.max(post.lowCount - 1, 0);
@@ -462,26 +504,26 @@ export const removePostVote = async(req,res)=>{
         return res.status(200).json({
             message: "Vote from post successfully removed!",
         });
-
-
-    } catch(error){
+    } catch (error) {
         console.error(error);
         return res.status(500).json({
-            message : "Internal Server Error"
-        })
+            message: "Internal Server Error",
+        });
     }
-}
+};
 
 // route related to searching a post
-export const searchPosts = async(req, res) => {
+export const searchPosts = async (req, res) => {
     try {
         //const { query } = req.body;  // The search query (e.g., prefix to search for)
         const query = req.query.prefix;
-        console.log(typeof(query.toLowerCase()));
+        console.log(typeof query.toLowerCase());
         console.log(req.user.address.pincode);
 
         if (!query) {
-            return res.status(400).json({ message: "Please provide a search query!" });
+            return res
+                .status(400)
+                .json({ message: "Please provide a search query!" });
         }
 
         // Search the Trie for posts that start with the given query (prefix)
@@ -489,24 +531,29 @@ export const searchPosts = async(req, res) => {
 
         // If no posts are found
         if (postsMatchingPrefix.length === 0) {
-            return res.status(404).json({ message: "No posts found matching the query." });
+            return res
+                .status(404)
+                .json({ message: "No posts found matching the query." });
         }
 
         // Fetch post details based on the results from the Trie
-        const postIds = postsMatchingPrefix.map(post => post.postId);
-        const posts = await PostModel.find({ '_id': { $in: postIds } });
+        const postIds = postsMatchingPrefix.map((post) => post.postId);
+        const posts = await PostModel.find({ _id: { $in: postIds } });
 
-        const filteredPosts = posts.filter(post => post.pincode === req.user.address.pincode);
+        const filteredPosts = posts.filter(
+            (post) => post.pincode === req.user.address.pincode
+        );
 
         if (filteredPosts.length === 0) {
-            return res.status(404).json({ message: "No posts found with the same pincode." });
+            return res
+                .status(404)
+                .json({ message: "No posts found with the same pincode." });
         }
 
         return res.status(200).json({
             message: "Posts found",
-            filteredPosts
+            filteredPosts,
         });
-
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: "Internal Server Error!" });
