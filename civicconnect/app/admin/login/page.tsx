@@ -8,15 +8,17 @@ import { toast } from "sonner";
 export default function LoginPage() {
     const router = useRouter();
     const { user, setUser } = useUser();
-
     const onSubmit = async (data: LoginSchema) => {
         try {
-            const res = await fetch("http://localhost:8000/api/v1/user/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-                body: JSON.stringify(data),
-            });
+            const res = await fetch(
+                "http://localhost:8000/api/v1/admin/login",
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify(data),
+                }
+            );
 
             if (!res.ok) {
                 const errJson = await res.json();
@@ -30,8 +32,8 @@ export default function LoginPage() {
 
             const json = await res.json();
             setUser(json.user);
-            router.push("/user/dashboard");
-            toast.success("Login Verified");
+            router.push("/admin/dashboard");
+            toast.success("Admin Login Verified");
         } catch (err) {
             if (err instanceof Error) {
                 toast.error("Network Error", {
@@ -44,12 +46,12 @@ export default function LoginPage() {
         <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
             <div className="flex w-full max-w-sm flex-col gap-6">
                 <LoginForm
-                    title="Welcome Back"
-                    description="Login with your credentials"
+                    title="Admin Panel"
+                    description="Enter Admin Credentails to Continue"
                     onSubmit={onSubmit}
-                    registerUrl="/register"
-                    otherSignInUrl="/admin/login"
-                    otherSignInTitle="Admin Sign In"
+                    registerUrl="/admin/register"
+                    otherSignInUrl="/"
+                    otherSignInTitle="User Sign In"
                 />
             </div>
         </div>

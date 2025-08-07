@@ -10,12 +10,14 @@ export default function RegisterPage() {
     const { user, setUser } = useUser();
     const onSubmit = async (data: RegisterSchema) => {
         try {
+            const { pincode, ...rest } = data;
+            const modifiedData = { ...rest, areaPin: pincode };
             const res = await fetch(
-                "http://localhost:8000/api/v1/user/register",
+                "http://localhost:8000/api/v1/admin/register",
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(data),
+                    body: JSON.stringify(modifiedData),
                 }
             );
 
@@ -25,7 +27,7 @@ export default function RegisterPage() {
                     (errJson as { message?: string }).message ||
                     "Unknown error";
 
-                toast.error("Login Failed", { description: message });
+                toast.error("Registration Failed", { description: message });
                 return;
             }
 
@@ -33,7 +35,7 @@ export default function RegisterPage() {
             if (result.success) {
                 try {
                     const res = await fetch(
-                        "http://localhost:8000/api/v1/user/login",
+                        "http://localhost:8000/api/v1/admin/login",
                         {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
@@ -54,7 +56,7 @@ export default function RegisterPage() {
 
                     const json = await res.json();
                     setUser(json.user);
-                    router.push("/user/dashboard");
+                    router.push("/admin/dashboard");
                     toast.success("Registration Successful");
                 } catch (err) {
                     if (err instanceof Error) {
@@ -65,13 +67,17 @@ export default function RegisterPage() {
                 }
             }
         } catch (err) {
-            console.error("Network or parsing error:", err);
+            if (err instanceof Error) {
+                toast.error("Network Error", {
+                    description: err?.message || "Something went wrong",
+                });
+            }
         }
     };
     return (
         <div className="bg-muted flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
             <div className="flex w-full max-w-2/5 flex-col gap-6">
-                <RegisterForm title="User" onSubmit={onSubmit} />
+                <RegisterForm title="Admin" onSubmit={onSubmit} />
             </div>
         </div>
     );

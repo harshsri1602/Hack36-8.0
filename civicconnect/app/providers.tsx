@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode } from "react";
+import { Toaster } from "sonner";
 import { UserProvider } from "@/context/userContext";
 
 type Props = {
@@ -8,7 +9,12 @@ type Props = {
 };
 
 const Providers = ({ children }: Props) => {
-    return <UserProvider>{children}</UserProvider>;
+    return (
+        <UserProvider>
+            {children}
+            <Toaster richColors />
+        </UserProvider>
+    );
 };
 
 export default Providers;
