@@ -1,17 +1,16 @@
-// pages/index.tsx
 "use client";
 
 import { NextPage } from "next";
 import dynamic from "next/dynamic";
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useUser } from "@/context/userContext";
-import { PostCard } from "@/components/ui/user/PostCard";
-import LatestPostsSidebar from "@/components/ui/user/LatestPostsSidebar";
-import { Input } from "@/components/ui/input";
-import Link from "next/link";
+import ImageScroller from "@/components/ui/ImageScroller";
+import { motion } from "framer-motion";
+import { timeAgo } from "@/lib/utils";
+import SearchWithModal from "@/components/ui/searchBox";
 
 // ── Dynamic import of MapWidget (no SSR) ─────────────────────────────
-const MapWidget = dynamic(() => import("@/components/ui/user/MapWidget"), {
+const DashboardMap = dynamic(() => import("@/components/ui/DashboardMap"), {
     ssr: false,
 });
 
@@ -33,9 +32,6 @@ const HomePage: NextPage = () => {
     const [posts, setPosts] = useState<ApiPost[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [searchResults, setSearchResults] = useState<ApiPost[]>([]);
-    const [isSearching, setIsSearching] = useState(false);
 
     const latestPosts = useMemo(
         () =>
@@ -49,56 +45,6 @@ const HomePage: NextPage = () => {
                 .map((p) => ({ id: p._id, title: p.title })),
         [posts]
     );
-
-    const debounceRef = useRef<NodeJS.Timeout | null>(null);
-
-    useEffect(() => {
-        if (!searchQuery.trim()) {
-            setSearchResults([]);
-            return;
-        }
-
-        setIsSearching(true);
-
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-
-        debounceRef.current = setTimeout(async () => {
-            console.log(searchQuery);
-            try {
-                const res = await fetch(
-                    `http://localhost:8000/api/v1/user/searchPosts?prefix=${searchQuery}`,
-                    {
-                        method: "GET",
-                        credentials: "include",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                    }
-                );
-
-                const data = await res.json();
-
-                if (!res.ok) {
-                    console.log(data.message);
-                }
-
-                setSearchResults(
-                    Array.isArray(data.filteredPosts)
-                        ? data.filteredPosts.slice(0, 5)
-                        : []
-                );
-            } catch (err) {
-                console.error("Search error:", err);
-                setSearchResults([]);
-            } finally {
-                setIsSearching(false);
-            }
-        }, 500); // 500ms debounce
-
-        return () => {
-            if (debounceRef.current) clearTimeout(debounceRef.current);
-        };
-    }, [searchQuery]);
 
     useEffect(() => {
         if (!user?.address?.pincode) {
@@ -133,98 +79,49 @@ const HomePage: NextPage = () => {
     }, [user]);
 
     return (
-        <div className="min-h-screen bg-black text-white">
-            <div
-                className="
-          w-full max-w-screen-2xl mx-auto
-          grid grid-cols-[4fr_3fr] grid-rows-[auto_auto]
-          gap-y-8 gap-x-24 py-12 px-4
-        "
-            >
-                {/* POSTS in first column */}
-                <main className="row-start-1 col-start-1 space-y-8 pl-1">
-                    <div className="ml-51 transform -translate-x-1/2 z-50 w-full max-w-md px-4 relative">
-                        <div className="bg-[#1F1F1F] border border-gray-700 rounded-2xl shadow-lg p-4">
-                            <Input
-                                placeholder="Search posts…"
-                                className="bg-[#2A2A2A] text-white"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                            {searchQuery && (
-                                <div className="absolute top-full left-0 w-full mt-2 rounded-lg bg-[#2A2A2A] border border-gray-700 shadow-lg overflow-hidden max-h-96 overflow-y-auto">
-                                    {isSearching ? (
-                                        <div className="px-4 py-2 text-sm text-gray-400">
-                                            Searching...
-                                        </div>
-                                    ) : searchResults.length > 0 ? (
-                                        searchResults.map((result) => (
-                                            <Link
-                                                key={result._id}
-                                                href={`/user/${result._id}`}
-                                                passHref
-                                            >
-                                                <div className="px-4 py-2 text-sm text-white hover:bg-gray-700 cursor-pointer">
-                                                    {result.title}
-                                                </div>
-                                            </Link>
-                                        ))
-                                    ) : (
-                                        <div className="px-4 py-2 text-sm text-gray-400">
-                                            No results found
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+        <div className="min-h-screen bg-black text-white flex justify-center w-full">
+            <div className="flex w-full max-w-5xl">
+                <div className=" w-11/12 border-r border-gray-800 p-4">
+                    <h2 className="text-xl font-bold mb-4 text-center text-teal-100">
+                        See what's happening at {user?.address.pincode}
+                    </h2>
+                    <div className="space-y-4">
+                        {posts.map((post, index) => (
+                            <div
+                                key={post._id || index}
+                                className="border-2 border-gray-700 bg-[#1A1A1A] rounded-lg shadow-md hover:shadow-xl hover:border-gray-500 transition-all duration-300 min-h-[25vh] flex flex-col justify-center"
+                            >
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{
+                                        duration: 0.3,
+                                        delay: index * 0.05,
+                                    }}
+                                >
+                                    <div className="m-2 flex flex-col justify-center h-full pl-2">
+                                        <h3 className="font-bold text-2xl mb-2 text-white/90">
+                                            {post.title}
+                                        </h3>
+                                        <ImageScroller
+                                            images={post.images || []}
+                                        />
+                                        <p className="text-gray-300 leading-relaxed">
+                                            {post.description}
+                                        </p>
+                                        <span className="text-gray-500 text-xs uppercase tracking-wide">
+                                            {timeAgo(post.post_date)}
+                                        </span>
+                                    </div>
+                                </motion.div>
+                            </div>
+                        ))}
                     </div>
-
-                    {loading ? (
-                        <div>Loading posts…</div>
-                    ) : error ? (
-                        <div className="text-red-500">{error}</div>
-                    ) : posts.length === 0 ? (
-                        <div>No problems reported in your region.</div>
-                    ) : (
-                        posts.map((p) => (
-                            <PostCard
-                                key={p._id}
-                                id={p._id}
-                                title={p.title}
-                                descriptionText={p.description}
-                                descriptionImageSrc={p.images?.[0]}
-                                commentsCount={p.comments.length}
-                                status={p.state}
-                                userVoted={
-                                    p.votes.some(
-                                        (vote) => vote.userId === user?._id
-                                    )
-                                        ? true
-                                        : false
-                                }
-                                vote={
-                                    p.votes.find(
-                                        (vote) => vote.userId === user?._id
-                                    )?.voteType ?? 0
-                                }
-                            />
-                        ))
-                    )}
-                </main>
-
-                {/* sidebar+map in second column */}
-                <div
-                    className="
-            row-start-1 row-span-2
-            col-start-2 col-span-2
-            border-l border-gray-700 pl-6 pr-[15%]
-            sticky top-12 self-start
-            flex flex-col space-y-8
-          "
-                >
-                    <LatestPostsSidebar latest={latestPosts} />
-                    <MapWidget posts={posts} />
                 </div>
+            </div>
+            <div className="flex flex-col">
+                <SearchWithModal />
+                <DashboardMap locations={posts} />
             </div>
         </div>
     );

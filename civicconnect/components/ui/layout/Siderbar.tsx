@@ -51,7 +51,7 @@ export default function Sidebar() {
 
             document.cookie = "jwt=; Max-Age=0; path=/";
 
-            router.push("/login");
+            router.push("/");
         } catch (err) {
             console.error("Network error:", err);
         }
@@ -64,7 +64,7 @@ export default function Sidebar() {
     return (
         <div
             className={clsx(
-                "fixed top-0 left-0 h-screen bg-[#1A1A1A] text-white transition-all duration-300 ease-in-out overflow-hidden",
+                "fixed top-0 left-0 h-screen bg-[#333333] text-white transition-all duration-300 ease-in-out overflow-hidden",
                 isHovered ? "w-48" : "w-16"
             )}
             onMouseEnter={() => setIsHovered(true)}
