@@ -3,7 +3,6 @@ import React from "react";
 import "leaflet/dist/leaflet.css";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import { MapOptions, Icon } from "leaflet";
-import MarkerClusterGroup from "react-leaflet-cluster";
 
 interface Location {
     title: string;
