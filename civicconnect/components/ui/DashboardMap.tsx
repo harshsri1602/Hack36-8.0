@@ -3,6 +3,9 @@ import React from "react";
 import "leaflet/dist/leaflet.css";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import { MapOptions, Icon } from "leaflet";
+import MarkerClusterGroup from "react-leaflet-markercluster";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
 interface Location {
     title: string;
@@ -28,16 +31,21 @@ const DashboardMap: React.FC<DashboardMapProps> = ({ locations }) => {
         <div className="h-[250px] w-full">
             <MapContainer {...mapOptions} className="h-full w-full">
                 <TileLayer url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png" />
-                {locations.length > 0 &&
-                    locations.map((location) => (
-                        <Marker
-                            key={location.title}
-                            position={[location.latitude, location.longitude]}
-                            icon={customIcon}
-                        >
-                            <Popup>{location.title}</Popup>
-                        </Marker>
-                    ))}
+                <MarkerClusterGroup>
+                    {locations.length > 0 &&
+                        locations.map((location) => (
+                            <Marker
+                                key={location.title}
+                                position={[
+                                    location.latitude,
+                                    location.longitude,
+                                ]}
+                                icon={customIcon}
+                            >
+                                <Popup>{location.title}</Popup>
+                            </Marker>
+                        ))}
+                </MarkerClusterGroup>
             </MapContainer>
         </div>
     );
