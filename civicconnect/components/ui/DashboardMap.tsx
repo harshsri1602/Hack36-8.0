@@ -6,11 +6,13 @@ import { MapOptions, Icon } from "leaflet";
 import MarkerClusterGroup from "react-leaflet-markercluster";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+import { timeAgo } from "@/lib/utils";
 
 interface Location {
     title: string;
     latitude: number;
     longitude: number;
+    post_date: string;
 }
 
 interface DashboardMapProps {
@@ -18,7 +20,6 @@ interface DashboardMapProps {
 }
 
 const DashboardMap: React.FC<DashboardMapProps> = ({ locations }) => {
-    console.log(locations);
     const mapOptions: MapOptions = {
         center: [28.609842646718608, 77.21054077148439],
         zoom: 13,
@@ -33,16 +34,23 @@ const DashboardMap: React.FC<DashboardMapProps> = ({ locations }) => {
                 <TileLayer url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png" />
                 <MarkerClusterGroup>
                     {locations.length > 0 &&
-                        locations.map((location) => (
+                        locations.map((location, index) => (
                             <Marker
-                                key={location.title}
+                                key={index}
                                 position={[
                                     location.latitude,
                                     location.longitude,
                                 ]}
                                 icon={customIcon}
                             >
-                                <Popup>{location.title}</Popup>
+                                <Popup>
+                                    <div className="flex flex-col">
+                                        <div className="font-bold">
+                                            {location.title}
+                                        </div>
+                                        {timeAgo(location.post_date)}
+                                    </div>
+                                </Popup>
                             </Marker>
                         ))}
                 </MarkerClusterGroup>

@@ -8,6 +8,7 @@ import ImageScroller from "@/components/ui/ImageScroller";
 import { motion } from "framer-motion";
 import { timeAgo } from "@/lib/utils";
 import SearchWithModal from "@/components/ui/searchBox";
+import { useRouter } from "next/navigation";
 
 // ── Dynamic import of MapWidget (no SSR) ─────────────────────────────
 const DashboardMap = dynamic(() => import("@/components/ui/DashboardMap"), {
@@ -32,6 +33,7 @@ const HomePage: NextPage = () => {
     const [posts, setPosts] = useState<ApiPost[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const router = useRouter();
 
     const latestPosts = useMemo(
         () =>
@@ -89,7 +91,10 @@ const HomePage: NextPage = () => {
                         {posts.map((post, index) => (
                             <div
                                 key={post._id || index}
-                                className="border-2 border-gray-700 bg-[#1A1A1A] rounded-lg shadow-md hover:shadow-xl hover:border-gray-500 transition-all duration-300 min-h-[25vh] flex flex-col justify-center"
+                                onClick={() => {
+                                    router.push(`/user/${post._id}`);
+                                }}
+                                className="cursor-pointer border-2 border-gray-700 bg-[#1A1A1A] rounded-lg shadow-md hover:shadow-xl hover:border-gray-500 transition-all duration-300 min-h-[25vh] flex flex-col justify-center"
                             >
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
