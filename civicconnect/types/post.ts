@@ -14,6 +14,10 @@ export interface Post {
     highCount: number;
     criticalCount: number;
     solution: Solution[];
+    post_date: string;
+    votes: Vote[];
+    currentUserVoted: true|false;
+    currentVoteType: number;
 }
 
 export interface Solution {
@@ -28,4 +32,9 @@ export interface Comment {
     upvotes: number;
     downvotes: number;
     written_by: string;
+}
+
+export interface Vote {
+    userId: string;
+    voteType: number;
 }

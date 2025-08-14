@@ -7,16 +7,10 @@ import MarkerClusterGroup from "react-leaflet-markercluster";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import { timeAgo } from "@/lib/utils";
-
-interface Location {
-    title: string;
-    latitude: number;
-    longitude: number;
-    post_date: string;
-}
+import { Post } from "@/types/post";
 
 interface DashboardMapProps {
-    locations: Location[];
+    locations: Post[];
 }
 
 const DashboardMap: React.FC<DashboardMapProps> = ({ locations }) => {
@@ -38,8 +32,8 @@ const DashboardMap: React.FC<DashboardMapProps> = ({ locations }) => {
                             <Marker
                                 key={index}
                                 position={[
-                                    location.latitude,
-                                    location.longitude,
+                                    location.latitude || 0,
+                                    location.longitude || 0,
                                 ]}
                                 icon={customIcon}
                             >
