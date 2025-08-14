@@ -1,5 +1,5 @@
 import express from 'express';
-import { getUser, logoutUser, userLogin, userRegister } from '../controllers/user/user.authController.js';
+import { getUser, logoutUser, updateProfile, userLogin, userRegister } from '../controllers/user/user.authController.js';
 //import { CreateComment, createPost, VoteComment, VotePost , viewAllUserPosts , deletePost, ViewRegion, PostById} from '../controllers/user/user.postModelController.js';
 //import { userLogin, userRegister } from '../controllers/user/user.authController.js';
 import { searchPosts,removeCommentVote,removePostVote,CreateComment, createPost, VoteComment, VotePost , viewAllUserPosts , deletePost, ViewRegion,PostById} from '../controllers/user/user.postModelController.js';
@@ -23,6 +23,7 @@ UserRouter.get('/:id',getUser)
 UserRouter.post('/logout',logoutUser);
 UserRouter.post('/removePostVote/:postId',authUser,removePostVote);
 UserRouter.post('/removeCommentVote/:commentId',authUser,removeCommentVote);
+UserRouter.put('/updateProfile/:userId', updateProfile);
 
 
 export default UserRouter;

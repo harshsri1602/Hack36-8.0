@@ -102,7 +102,7 @@ const ProfilePage: React.FC = () => {
         setSaving(true);
         try {
             const res = await fetch(
-                `http://localhost:8000/api/v1/user/${user._id}`,
+                `http://localhost:8000/api/v1/user/updateProfile/${user._id}`,
                 {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
@@ -110,8 +110,9 @@ const ProfilePage: React.FC = () => {
                     body: JSON.stringify(formData),
                 }
             );
-            if (!res.ok) throw new Error("Update failed");
             const data = await res.json();
+            console.log(data);
+            if (!res.ok) throw new Error("Update failed");
             setUser(data.user);
         } catch (err) {
             console.error("Error updating profile:", err);
