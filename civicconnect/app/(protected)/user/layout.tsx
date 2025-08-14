@@ -11,7 +11,7 @@ export default function RootLayout({
             <div className="relative z-50">
                 <Sidebar />
             </div>
-            <main className="relative z-10 flex-1">{children}</main>
+            <main className="relative z-10 flex-1 overflow-y-auto">{children}</main>
         </div>
     );
 }
