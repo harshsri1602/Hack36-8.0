@@ -16,8 +16,9 @@ export interface Post {
     solution: Solution[];
     post_date: string;
     votes: Vote[];
-    currentUserVoted: true|false;
+    currentUserVoted: true | false;
     currentVoteType: number;
+    pincode: string;
 }
 
 export interface Solution {
