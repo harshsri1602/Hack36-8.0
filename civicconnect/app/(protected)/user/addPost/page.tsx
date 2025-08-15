@@ -1,4 +1,3 @@
-// pages/create-post.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -13,74 +12,41 @@ L.Icon.Default.mergeOptions({
 });
 
 import { z } from "zod";
-import { useForm } from "react-hook-form";
+import { FieldError, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { MapContainer, Marker, TileLayer, useMapEvents } from "react-leaflet";
+import { toast } from "sonner";
 
-import {
-    Carousel,
-    CarouselContent,
-    CarouselItem,
-    CarouselNext,
-    CarouselPrevious,
-} from "@/components/ui/carousel";
-import { MapContainer } from "react-leaflet";
-import { Marker, TileLayer, useMapEvents } from "react-leaflet";
-
-const ACCEPTED_IMAGE_TYPES = [
-    "image/jpeg",
-    "image/jpg",
-    "image/png",
-    "image/webp",
-];
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 const postSchema = z.object({
-    title: z.string().min(1).max(100),
-    description: z.string().min(10),
+    title: z
+        .string()
+        .min(1, { message: "Title must be atleast (1) Character long " })
+        .max(100, { message: "Title must be less than (100) characters long " }),
+    description: z.string().min(10, { message: "Description must be atleast (10) characters long " }),
     images: z
         .any()
-        .refine(
-            (files) =>
-                !files ||
-                (files instanceof FileList &&
-                    ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type)),
-            {
-                message: "Image should be .jpg, .jpeg, .png or .webp",
-            }
-        ),
+        .refine((files) => !files || (files instanceof FileList && ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type)), {
+            message: "Image should be .jpg, .jpeg, .png or .webp",
+        }),
     tag: z.string().min(1, "Please select a tag"),
     latitude: z.number(),
     longitude: z.number(),
 });
 
-const LocationMarker = ({
-    onSelect,
-}: {
-    onSelect: (latlng: { lat: number; lng: number }) => void;
-}) => {
+const LocationMarker = ({ onSelect }: { onSelect: (latlng: { lat: number; lng: number }) => void }) => {
     const [pos, setPos] = useState<{ lat: number; lng: number } | null>(null);
 
     useMapEvents({
         click(e: any) {
             setPos(e.latlng);
             onSelect(e.latlng);
-            console.log("Picked location:", e.latlng);
         },
     });
 
@@ -89,10 +55,7 @@ const LocationMarker = ({
 
 const CreatePostPage = () => {
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-    const [location, setLocation] = useState<{
-        lat: number;
-        lng: number;
-    } | null>(null);
+    const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
 
     const form = useForm({
         resolver: zodResolver(postSchema),
@@ -108,258 +71,215 @@ const CreatePostPage = () => {
 
     const watchImages = form.watch("images");
     type PostForm = z.infer<typeof postSchema>;
+
     useEffect(() => {
         if (watchImages && watchImages instanceof FileList) {
-            const previews = Array.from(watchImages).map((file) =>
-                URL.createObjectURL(file)
-            );
+            const previews = Array.from(watchImages).map((file) => URL.createObjectURL(file));
             setImagePreviews(previews);
             return () => previews.forEach((url) => URL.revokeObjectURL(url));
         }
     }, [watchImages]);
 
-    const onSubmit = async (values: PostForm) => {
-        console.log("Form values:", values);
+    const onError = (errors: typeof form.formState.errors) => {
+        Object.values(errors).forEach((err) => {
+            // Check if this is a FieldError and has a message
+            if (err && typeof err === "object" && "message" in err) {
+                toast.error("Validation Error", {
+                    description: (err as FieldError).message,
+                });
+            }
+        });
+    };
 
-        // Only proceed if there are images selected
+    const onSubmit = async (values: PostForm) => {
         if (!values.images || values.images.length === 0) {
-            alert("Please upload at least one image.");
+            toast.error("Please upload at least one image.");
             return;
         }
 
-        // Create a new FormData object to hold the form data
         const formData = new FormData();
-
-        // Append regular form fields to FormData
         formData.append("title", values.title);
         formData.append("description", values.description);
         formData.append("tag", values.tag);
         formData.append("latitude", values.latitude.toString());
         formData.append("longitude", values.longitude.toString());
 
-        // Append images (if any) to FormData
         if (values.images) {
-            Array.from(values.images).forEach((file: File) => {
+            Array.from(values.images as FileList).forEach((file: File) => {
                 formData.append("images", file);
             });
         }
 
         try {
-            const res = await fetch(
-                "http://localhost:8000/api/v1/user/postIssue",
-                {
-                    method: "POST",
-                    body: formData,
-                    credentials: "include",
-                }
-            );
+            const res = await fetch("http://localhost:8000/api/v1/user/postIssue", {
+                method: "POST",
+                body: formData,
+                credentials: "include",
+            });
 
             const data = await res.json();
-
             if (!res.ok) {
-                console.error("Server Error:", data.message);
-                alert(`Error: ${data.message}`);
+                toast.error(`Error: ${data.message}`);
                 return;
             }
+            toast.success(`Success: ${data.message}`);
 
-            console.log("Server Response:", data.message);
-            alert(`Success: ${data.message}`);
+            form.reset({
+                title: "",
+                description: "",
+                images: undefined,
+                tag: "other",
+                latitude: 0,
+                longitude: 0,
+            });
+            setImagePreviews([]);
+            setLocation(null);
         } catch (err) {
-            console.error("Network error:", err);
-            alert("Something went wrong while submitting the post.");
+            toast.error("Something went wrong while submitting the post.");
         }
     };
 
     return (
         <div className="ml-16 md:ml-48 p-6 transition-all duration-300">
-            <div className="max-w-2xl mx-auto bg-[#1A1A1A] rounded shadow p-6">
-                <h1 className="text-3xl font-bold mb-6 text-white">
-                    Create a New Post
-                </h1>
+            <div className="max-w-2xl mx-auto bg-[#1A1A1A] rounded-2xl shadow-lg p-8 border border-[#2A2A2A]">
+                <h1 className="text-3xl font-bold mb-8 text-white">Create a New Post</h1>
+
                 <Form {...form}>
-                    <form
-                        onSubmit={form.handleSubmit(onSubmit)}
-                        className="space-y-8"
-                    >
-                        {/* Title Field */}
+                    <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-8">
+                        {/* Title */}
                         <FormField
                             control={form.control}
                             name="title"
                             render={({ field }) => (
-                                <FormItem className="relative flex flex-col gap-y-1">
-                                    <FormLabel className="text-white">
-                                        Title
-                                    </FormLabel>
+                                <FormItem>
+                                    <FormLabel className="text-gray-200">Title</FormLabel>
                                     <FormControl>
                                         <Input
-                                            placeholder="Title"
+                                            placeholder="Enter post title"
                                             {...field}
-                                            className="text-white"
+                                            className="bg-[#2A2A2A] text-white border border-[#3A3A3A] focus:border-[#4A9CFF] focus:ring-0"
                                         />
                                     </FormControl>
-                                    <FormMessage className="absolute text-red-500 text-sm -bottom-6 left-0" />
                                 </FormItem>
                             )}
                         />
 
-                        {/* Description Field */}
+                        {/* Description */}
                         <FormField
                             control={form.control}
                             name="description"
                             render={({ field }) => (
-                                <FormItem className="relative flex flex-col gap-y-1">
-                                    <FormLabel className="text-white">
-                                        Description
-                                    </FormLabel>
+                                <FormItem>
+                                    <FormLabel className="text-gray-200">Description</FormLabel>
                                     <FormControl>
                                         <Input
-                                            placeholder="Description"
+                                            placeholder="Describe the issue"
                                             {...field}
-                                            className="text-white"
+                                            className="bg-[#2A2A2A] text-white border border-[#3A3A3A] focus:border-[#4A9CFF] focus:ring-0"
                                         />
                                     </FormControl>
-                                    <FormMessage className="absolute text-red-500 text-sm -bottom-6 left-0" />
                                 </FormItem>
                             )}
                         />
 
+                        {/* Tag */}
                         <FormField
                             control={form.control}
                             name="tag"
                             render={({ field }) => (
-                                <FormItem className="relative flex flex-col gap-y-1">
-                                    <FormLabel className="text-white">
-                                        Tags
-                                    </FormLabel>
+                                <FormItem>
+                                    <FormLabel className="text-gray-200">Tag</FormLabel>
                                     <FormControl>
-                                        <Select
-                                            onValueChange={field.onChange}
-                                            defaultValue={field.value}
-                                        >
-                                            <SelectTrigger className="text-white bg-transparent border w-full z-40">
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <SelectTrigger className="bg-[#2A2A2A] text-white border border-[#3A3A3A]">
                                                 <SelectValue placeholder="Select a tag" />
                                             </SelectTrigger>
-                                            <SelectContent className="bg-[#1A1A1A] text-white max-h-[150px] overflow-y-auto z-50 absolute top-full">
-                                                <SelectItem value="road">
-                                                    Road
-                                                </SelectItem>
-                                                <SelectItem value="domestic">
-                                                    Domestic
-                                                </SelectItem>
-                                                <SelectItem value="electricity">
-                                                    Electricity
-                                                </SelectItem>
-                                                <SelectItem value="utility">
-                                                    Utility
-                                                </SelectItem>
-                                                <SelectItem value="other">
-                                                    Other
-                                                </SelectItem>
+                                            <SelectContent className="bg-[#1A1A1A] text-white border border-[#3A3A3A]">
+                                                <SelectItem value="road">Road</SelectItem>
+                                                <SelectItem value="domestic">Domestic</SelectItem>
+                                                <SelectItem value="electricity">Electricity</SelectItem>
+                                                <SelectItem value="utility">Utility</SelectItem>
+                                                <SelectItem value="other">Other</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </FormControl>
-                                    {form.formState.errors.tag && (
-                                        <FormMessage className="absolute text-red-500 text-sm -bottom-6 left-0">
-                                            {form.formState.errors.tag.message}
-                                        </FormMessage>
-                                    )}
                                 </FormItem>
                             )}
                         />
 
+                        {/* Images */}
                         <FormField
                             control={form.control}
                             name="images"
                             render={({ field }) => (
-                                <FormItem className="relative flex flex-col gap-y-1">
-                                    <FormLabel className="text-white">
-                                        Upload Images
-                                    </FormLabel>
+                                <FormItem>
+                                    <FormLabel className="text-gray-200">Upload Images</FormLabel>
                                     <FormControl>
                                         <Input
                                             type="file"
                                             multiple
-                                            onChange={(e) =>
-                                                field.onChange(e.target.files)
-                                            }
-                                            className="text-white"
+                                            onChange={(e) => field.onChange(e.target.files)}
+                                            className="bg-[#2A2A2A] text-white border border-[#3A3A3A]"
                                         />
                                     </FormControl>
-                                    <FormMessage className="absolute text-red-500 text-sm -bottom-6 left-0" />
                                 </FormItem>
                             )}
                         />
 
-                        {/* Image Previews Carousel */}
+                        {/* Image Carousel */}
                         {imagePreviews.length > 0 && (
-                            <div className="relative w-fit mx-auto">
-                                <Carousel className="w-full max-w-md">
+                            <div className="bg-[#2A2A2A] p-4 rounded-lg shadow-inner">
+                                <Carousel className="w-full max-w-md mx-auto">
                                     <CarouselContent>
                                         {imagePreviews.map((url, idx) => (
-                                            <CarouselItem
-                                                key={idx}
-                                                className="flex justify-center"
-                                            >
+                                            <CarouselItem key={idx} className="flex justify-center">
                                                 <img
                                                     src={url}
                                                     alt={`preview-${idx}`}
-                                                    className="w-40 h-40 object-cover rounded"
+                                                    className="w-48 h-48 object-cover rounded-lg"
                                                 />
                                             </CarouselItem>
                                         ))}
                                     </CarouselContent>
                                     {imagePreviews.length > 1 && (
                                         <>
-                                            <CarouselPrevious className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white" />
-                                            <CarouselNext className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white" />
+                                            <CarouselPrevious type="button" className="bg-white/10 hover:bg-white/20" />
+                                            <CarouselNext type="button" className="bg-white/10 hover:bg-white/20" />
                                         </>
                                     )}
                                 </Carousel>
                             </div>
                         )}
 
-                        <FormItem className="flex flex-col gap-y-2">
-                            <FormLabel className="text-white">
-                                Select Location
-                            </FormLabel>
-                            <div className="h-64 w-full rounded-md overflow-hidden shadow-lg">
-                                <MapContainer
-                                    center={[28.6139, 77.209]}
-                                    zoom={11}
-                                    className="h-full w-full"
-                                >
+                        {/* Map */}
+                        <div>
+                            <FormLabel className="text-gray-200">Select Location</FormLabel>
+                            <div className="h-72 rounded-lg overflow-hidden border border-[#3A3A3A] shadow-lg">
+                                <MapContainer center={[28.6139, 77.209]} zoom={11} className="h-full w-full">
                                     <TileLayer
                                         url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
-                                        attribution={`
-                      © <a href="https://stadiamaps.com/">Stadia Maps</a>, 
-                      © <a href="https://www.openstreetmap.org/">OSM</a>
-                    `}
+                                        attribution="© Stadia Maps, © OpenStreetMap"
                                     />
                                     <LocationMarker
                                         onSelect={(latlng) => {
                                             setLocation(latlng);
-                                            form.setValue(
-                                                "longitude",
-                                                latlng.lng
-                                            );
-                                            form.setValue(
-                                                "latitude",
-                                                latlng.lat
-                                            );
+                                            form.setValue("longitude", latlng.lng);
+                                            form.setValue("latitude", latlng.lat);
                                         }}
                                     />
                                 </MapContainer>
                             </div>
                             {location && (
-                                <p className="text-sm text-gray-300 mt-2">
-                                    Chosen: {location.lat.toFixed(5)},{" "}
-                                    {location.lng.toFixed(5)}
+                                <p className="text-sm text-gray-400 mt-2">
+                                    Chosen: {location.lat.toFixed(5)}, {location.lng.toFixed(5)}
                                 </p>
                             )}
-                        </FormItem>
+                        </div>
+
+                        {/* Submit */}
                         <Button
                             type="submit"
-                            className={`mt-4 transition duration-150 active:scale-95 ${
+                            className={`w-full py-3 text-lg font-medium rounded-lg transition-colors ${
                                 Object.keys(form.formState.errors).length > 0
                                     ? "bg-[#E5484D] hover:bg-[#d03f44]"
                                     : "bg-[#1A9338] hover:bg-[#17842f]"

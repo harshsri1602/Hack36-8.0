@@ -20,6 +20,13 @@ export default function ConfirmDeleteModal({ postId, onCancel, onDeleteSuccess }
         }
     }, [isDeleting]);
 
+    useEffect(() => {
+        if (postId) {
+            setIsDeleting(false);
+            setAnimationData(null);
+        }
+    }, [postId]);
+
     const handleConfirm = async () => {
         if (!postId) return;
         setIsDeleting(true);
