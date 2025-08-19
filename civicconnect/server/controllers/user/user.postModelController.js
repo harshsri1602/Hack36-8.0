@@ -387,6 +387,24 @@ export const ViewRegion = async (req, res) => {
     }
 };
 
+export const viewAllPosts = async (req, res) => {
+    try {
+        const posts = await PostModel.find({});
+        if (!posts) {
+            return res
+                .status(200)
+                .json({ success: true, message: "No problems in the world" });
+        } else {
+            return res.status(200).json({ success: true, posts });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            error: "Something went wrong fetching posts",
+        });
+    }
+};
+
 export const PostById = async (req, res) => {
     try {
         const { id } = req.params;

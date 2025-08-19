@@ -1,14 +1,17 @@
+// RootLayout.tsx
 import Sidebar from "@/components/ui/layout/Siderbar";
 
 export default function RootLayout({
     children,
-}: Readonly<{
+}: {
     children: React.ReactNode;
-}>) {
+}) {
     return (
-        <div className="flex">
-            <Sidebar />
-            <div className="flex-1">{children}</div>
+        <div className="flex h-screen overflow-hidden">
+            <div className="relative z-50">
+                <Sidebar />
+            </div>
+            <main className="relative z-10 flex-1 overflow-y-auto">{children}</main>
         </div>
     );
 }

@@ -28,6 +28,7 @@
         "jsonwebtoken": "^9.0.2",
         "leaflet.heat": "^0.2.0",
         "leaflet.markercluster": "^1.5.3",
+        "lottie-react": "^2.4.1",
         "lucide-react": "^0.501.0",
         "memorystore": "^1.6.7",
         "mongoose": "^8.13.2",

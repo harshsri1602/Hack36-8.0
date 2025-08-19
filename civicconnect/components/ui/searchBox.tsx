@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 
 interface ApiPost {
@@ -20,6 +21,7 @@ export default function SearchWithModal() {
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState<ApiPost[]>([]);
     const [isSearching, setIsSearching] = useState(false);
+    const router = useRouter();
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -163,6 +165,11 @@ export default function SearchWithModal() {
                                         {searchResults.map((post, idx) => (
                                             <li
                                                 key={idx}
+                                                onClick={() => {
+                                                    router.push(
+                                                        `/user/${post._id}`
+                                                    );
+                                                }}
                                                 className="p-2 bg-[#1A1A1A] text-white rounded border border-gray-800 hover:bg-gray-600 transition-colors cursor-pointer"
                                             >
                                                 {post.title}

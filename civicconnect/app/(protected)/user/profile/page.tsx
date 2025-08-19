@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useUser } from "@/context/userContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trash2 } from "lucide-react";
+import ConfirmDeleteModal from "@/components/ui/DeletePostModal";
 
 interface Post {
     _id: string;
@@ -33,12 +34,11 @@ const ProfilePage: React.FC = () => {
         pincode: "",
     });
     const [saving, setSaving] = useState(false);
-
-    // Posts state
     const [posts, setPosts] = useState<Post[]>([]);
     const [loadingPosts, setLoadingPosts] = useState(false);
     const [errorPosts, setErrorPosts] = useState<string | null>(null);
     const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [selectedPost, setSelectedPost] = useState<string | null>(null);
 
     useEffect(() => {
         // populate form
@@ -88,8 +88,7 @@ const ProfilePage: React.FC = () => {
         const totalCount = lowCount + mediumCount + highCount + criticalCount;
         if (totalCount === 0) return "None";
 
-        const weightedSum =
-            lowCount * 0 + mediumCount * 1 + highCount * 2 + criticalCount * 3;
+        const weightedSum = lowCount * 0 + mediumCount * 1 + highCount * 2 + criticalCount * 3;
         const avg = weightedSum / totalCount;
 
         if (avg < 0.5) return "Low";
@@ -101,42 +100,20 @@ const ProfilePage: React.FC = () => {
     const handleUpdate = async () => {
         setSaving(true);
         try {
-            const res = await fetch(
-                `http://localhost:8000/api/v1/user/${user._id}`,
-                {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify(formData),
-                }
-            );
-            if (!res.ok) throw new Error("Update failed");
+            const res = await fetch(`http://localhost:8000/api/v1/user/updateProfile/${user._id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify(formData),
+            });
             const data = await res.json();
+            console.log(data);
+            if (!res.ok) throw new Error("Update failed");
             setUser(data.user);
         } catch (err) {
             console.error("Error updating profile:", err);
         } finally {
             setSaving(false);
-        }
-    };
-
-    const handleDelete = async (postId: string) => {
-        if (!confirm("Are you sure you want to delete this post?")) return;
-        setDeletingId(postId);
-        try {
-            const res = await fetch(
-                `http://localhost:8000/api/v1/user/deletePost/${postId}`,
-                {
-                    method: "DELETE",
-                    credentials: "include",
-                }
-            );
-            if (!res.ok) throw new Error("Delete failed");
-            setPosts((prev) => prev.filter((p) => p._id !== postId));
-        } catch (err) {
-            console.error("Error deleting post:", err);
-        } finally {
-            setDeletingId(null);
         }
     };
 
@@ -147,17 +124,13 @@ const ProfilePage: React.FC = () => {
                     <h1 className="text-2xl font-bold">My Account</h1>
                     <div className="space-x-2">
                         <Button
-                            variant={
-                                activeTab === "profile" ? undefined : "ghost"
-                            }
+                            variant={activeTab === "profile" ? undefined : "ghost"}
                             onClick={() => setActiveTab("profile")}
                         >
                             Profile
                         </Button>
                         <Button
-                            variant={
-                                activeTab === "posts" ? undefined : "ghost"
-                            }
+                            variant={activeTab === "posts" ? undefined : "ghost"}
                             onClick={() => setActiveTab("posts")}
                         >
                             My Posts
@@ -165,7 +138,7 @@ const ProfilePage: React.FC = () => {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <AnimatePresence exitBeforeEnter>
+                    <AnimatePresence mode="wait">
                         {activeTab === "profile" ? (
                             <motion.div
                                 key="profile"
@@ -177,9 +150,7 @@ const ProfilePage: React.FC = () => {
                                 {/* Profile Form */}
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="text-sm text-gray-400">
-                                            Email
-                                        </label>
+                                        <label className="text-sm text-gray-400">Email</label>
                                         <Input
                                             name="email"
                                             value={formData.email}
@@ -189,9 +160,7 @@ const ProfilePage: React.FC = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-sm text-gray-400">
-                                            Password
-                                        </label>
+                                        <label className="text-sm text-gray-400">Password</label>
                                         <Input
                                             name="password"
                                             value={formData.password}
@@ -202,9 +171,7 @@ const ProfilePage: React.FC = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-sm text-gray-400">
-                                            Phone Number
-                                        </label>
+                                        <label className="text-sm text-gray-400">Phone Number</label>
                                         <Input
                                             name="phoneNumber"
                                             value={formData.phoneNumber}
@@ -213,9 +180,7 @@ const ProfilePage: React.FC = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-sm text-gray-400">
-                                            Address Line 1
-                                        </label>
+                                        <label className="text-sm text-gray-400">Address Line 1</label>
                                         <Input
                                             name="line1"
                                             value={formData.line1}
@@ -224,9 +189,7 @@ const ProfilePage: React.FC = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-sm text-gray-400">
-                                            Area
-                                        </label>
+                                        <label className="text-sm text-gray-400">Area</label>
                                         <Input
                                             name="area"
                                             value={formData.area}
@@ -235,9 +198,7 @@ const ProfilePage: React.FC = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="text-sm text-gray-400">
-                                            Pincode
-                                        </label>
+                                        <label className="text-sm text-gray-400">Pincode</label>
                                         <Input
                                             name="pincode"
                                             value={formData.pincode}
@@ -246,14 +207,8 @@ const ProfilePage: React.FC = () => {
                                         />
                                     </div>
                                     <div className="pt-4">
-                                        <Button
-                                            onClick={handleUpdate}
-                                            disabled={saving}
-                                            className="w-full"
-                                        >
-                                            {saving
-                                                ? "Saving..."
-                                                : "Update Profile"}
+                                        <Button onClick={handleUpdate} disabled={saving} className="w-full">
+                                            {saving ? "Saving..." : "Update Profile"}
                                         </Button>
                                     </div>
                                 </div>
@@ -268,13 +223,9 @@ const ProfilePage: React.FC = () => {
                             >
                                 {/* Posts Table */}
                                 {loadingPosts ? (
-                                    <p className="text-white">
-                                        Loading posts...
-                                    </p>
+                                    <p className="text-white">Loading posts...</p>
                                 ) : errorPosts ? (
-                                    <p className="text-red-500">
-                                        Error: {errorPosts}
-                                    </p>
+                                    <p className="text-red-500">Error: {errorPosts}</p>
                                 ) : (
                                     <div className="overflow-x-auto">
                                         <table className="min-w-full table-auto">
@@ -303,17 +254,10 @@ const ProfilePage: React.FC = () => {
                                                         key={post._id}
                                                         className="border-b border-gray-700 hover:bg-gray-900"
                                                     >
-                                                        <td className="px-4 py-2 text-sm">
-                                                            {post.title}
-                                                        </td>
-                                                        <td className="px-4 py-2 text-sm capitalize">
-                                                            {post.state}
-                                                        </td>
+                                                        <td className="px-4 py-2 text-sm">{post.title}</td>
+                                                        <td className="px-4 py-2 text-sm capitalize">{post.state}</td>
                                                         <td className="px-4 py-2 text-sm text-center">
-                                                            {
-                                                                post.comments
-                                                                    .length
-                                                            }
+                                                            {post.comments.length}
                                                         </td>
                                                         <td
                                                             className={`px-4 py-2 text-sm rounded font-medium ${
@@ -321,8 +265,7 @@ const ProfilePage: React.FC = () => {
                                                                     Low: "bg-green-800 text-white",
                                                                     Medium: "bg-yellow-700 text-white",
                                                                     High: "bg-orange-700 text-white",
-                                                                    Critical:
-                                                                        "bg-red-700 text-white",
+                                                                    Critical: "bg-red-700 text-white",
                                                                     None: "bg-gray-700 text-white",
                                                                 }[
                                                                     calculateSeverity(
@@ -346,21 +289,13 @@ const ProfilePage: React.FC = () => {
                                                             <Button
                                                                 variant="destructive"
                                                                 size="icon"
-                                                                onClick={() =>
-                                                                    handleDelete(
-                                                                        post._id
-                                                                    )
-                                                                }
-                                                                disabled={
-                                                                    deletingId ===
-                                                                    post._id
-                                                                }
+                                                                onClick={() => {
+                                                                    setSelectedPost(post._id);
+                                                                }}
+                                                                disabled={deletingId === post._id}
                                                             >
-                                                                {deletingId ===
-                                                                post._id ? (
-                                                                    <span className="text-xs">
-                                                                        ...
-                                                                    </span> // simple loading indicator
+                                                                {deletingId === post._id ? (
+                                                                    <span className="text-xs">...</span> // simple loading indicator
                                                                 ) : (
                                                                     <Trash2 className="w-4 h-4" />
                                                                 )}
@@ -371,10 +306,15 @@ const ProfilePage: React.FC = () => {
                                             </tbody>
                                         </table>
                                         {posts.length === 0 && (
-                                            <p className="text-center text-gray-500 py-4">
-                                                No posts found.
-                                            </p>
+                                            <p className="text-center text-gray-500 py-4">No posts found.</p>
                                         )}
+                                        <ConfirmDeleteModal
+                                            postId={selectedPost}
+                                            onCancel={() => setSelectedPost(null)}
+                                            onDeleteSuccess={(postId) => {
+                                                setPosts((prev) => prev.filter((p) => p._id !== postId));
+                                            }}
+                                        />
                                     </div>
                                 )}
                             </motion.div>
