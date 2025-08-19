@@ -9,6 +9,7 @@ import { connectCloudinary } from './config/cloudinary.js';
 import UserRouter from './routes/user.routes.js';
 import AdminRouter from './routes/admin.routes.js';
 import rebuildTrieFromDB from './utils/rebuildTrieFromDB.js';
+import passport from './config/passport.js';
 const MemoryStore = memorystore(session); // This is to prevent memory leaks in session storage by providing a more efficient in-memory store than the default MemoryStore, with optional cleanup of expired sessions.
 
 dotenv.config();
@@ -24,6 +25,8 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Routes
 app.use('/api/v1/user',UserRouter);
