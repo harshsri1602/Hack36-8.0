@@ -90,25 +90,48 @@ export const userLogin = async(req,res)=>{
 
 export const updateProfile = async(req,res) => {
     try {
-        
-        const {email,password,phoneNumber,line1,area,pincode} = req.body;
         const user = req.user;
-        const checkUser = UserModel.find({$or:[{email},{phoneNumber}]});
-        if(checkUser){
-            return res.status(400).json({success:false,message:"Email or Phone Number Already taken"});
+        const phoneNumber = req.body.phoneNumber ? req.body.phoneNumber : null;
+        if(phoneNumber){
+            if(/^\d{10}$/.test(phoneNumber)){
+                const checkForExistingUser = await UserModel.findOne({phoneNumber:phoneNumber});
+                if(checkForExistingUser){
+                    return res.status(400).json({
+                        message : "Phone Number is already taken!"
+                    })
+                }
+                await UserModel.findByIdAndUpdate(user._id,
+                    {phoneNumber:phoneNumber},
+                    {new : true}
+                )
+            }
+            else{
+                return res.status(400).json({
+                    message : "Invalid phone number."
+                })
+            }
         }
 
-        const salt = await bcrypt.genSalt(10);
-        const hash_pwd = await bcrypt.hash(password,salt);
-        const address={
-                line1,
-                area,
-                pincode
+        const {line1,area,pincode} = req.body;
+        let updateFields = {};
+
+        if(line1){
+            updateFields.line1 = line1;
+        }
+        if(area){
+            updateFields.area = area;
+        }
+        if(pincode){
+            updateFields.pincode = pincode;
         }
 
-        const updateUser = await UserModel.findByIdAndUpdate(user._id,{email,password:hash_pwd,phoneNumber,address:JSON.parse(address)})
-        await updateUser.save();
-        return res.status(200).json({success:true,message:"Updated User Information"});
+        if(Object.keys(updateFields).length>0){
+            const updatedUser = await UserModel.findByIdAndUpdate(user._id, 
+                updateFields, 
+                { new: true });
+            return res.status(200).json({message:"Updated User Information"});
+        }
+        return res.status(200).json({message:"Nothing to update"});
         
     } catch (error) {
         console.log(error);
