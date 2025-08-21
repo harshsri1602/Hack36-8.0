@@ -1,6 +1,9 @@
 import mongoose from 'mongoose'
 
 const user_Schema = new mongoose.Schema({
+    googleId:{
+        type:String
+    },
     name:{
         type:String,
         required:true

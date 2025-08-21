@@ -19,12 +19,25 @@ const app = express();
 
 // Middleware
 app.use(cors({
-    origin:'http://localhost:3000',
+    origin:'http://localhost:3000',// link to where the frontend is posted
     credentials:true,
 }));
 app.use(express.json());
 app.use(cookieParser());
 
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "mysecret",
+    resave: false,
+    saveUninitialized: false,
+    store: new MemoryStore({ checkPeriod: 86400000 }), // cleanup expired sessions every 24h
+    cookie: {
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      httpOnly: true,
+      secure: false, // set true in production with HTTPS
+    },
+  })
+);
 app.use(passport.initialize());
 app.use(passport.session());
 

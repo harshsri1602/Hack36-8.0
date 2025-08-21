@@ -1,8 +1,11 @@
-const passport = require("passport");
-const GoogleStrategy = require("passport-google-oauth20").Strategy;
-const jwt = require("jsonwebtoken");
-import UserModel from "../models/user.model";
-
+import passport from 'passport';
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import jwt from 'jsonwebtoken';
+import UserModel from "../models/user.model.js";
+import dotenv from 'dotenv';
+dotenv.config();
+//console.log(process.env.GOOGLE_ID);
+//import { generateTokenAndSetCookie } from "../utils/generateTokenandSetCookies";
 passport.use(
   new GoogleStrategy(
     {
@@ -29,14 +32,15 @@ passport.use(
           await user.save();
         }
 
-        // Generate JWT token
-        const token = jwt.sign(
-          { userID: user._id },
-          process.env.JWT_SECRET,
-          { expiresIn: "1h" }
-        );
+        // // Generate JWT token
+        // const token = jwt.sign(
+        //   { userID: user._id },
+        //   process.env.JWT_SECRET,
+        //   { expiresIn: "1h" }
+        // );
+       
 
-        return done(null, { user, token });
+        return done(null, { user });
       } catch (err) {
         return done(err, false);
       }
@@ -48,7 +52,7 @@ passport.use(
 passport.serializeUser((user, done) => done(null, user.user._id));
 passport.deserializeUser(async (id, done) => {
   try {
-    const user = await User.findById(id);
+    const user = await UserModel.findById(id);
     done(null, user);
   } catch (err) {
     done(err, null);

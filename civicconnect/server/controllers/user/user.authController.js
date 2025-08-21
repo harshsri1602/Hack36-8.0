@@ -5,6 +5,7 @@ import validator from 'validator'
 import UserModel from '../../models/user.model.js';
 import {generateTokenAndSetCookie} from '../../utils/generateTokenandSetCookies.js'
 
+
 export const userRegister = async(req,res)=>{
     try {
         const {name,email,password,phoneNumber,line1,area,pincode} = req.body;
@@ -151,3 +152,4 @@ export const getUser = async(req,res)=>{
         });
     }
 }
+
