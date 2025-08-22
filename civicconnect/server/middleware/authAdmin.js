@@ -13,6 +13,11 @@ const authAdmin = async (req,res,next) => {
         }
         const id = decoded.id;
         const user = await Admin_model.findById(id).select('-password');
+        if(!user){
+            return res.status(404).json({
+                message : "Admin not found!"
+            })
+        }
         req.admin = user;
         next();
     } catch (error) {

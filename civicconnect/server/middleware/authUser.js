@@ -13,6 +13,11 @@ const authUser = async (req,res,next) => {
         }
         const id = decoded.id;
         const user = await UserModel.findById(id).select('-password');
+        if(!user){
+            return res.status(404).json({
+                message : "User not found!"
+            })
+        }
         req.user = user;
         next();
     } catch (error) {
