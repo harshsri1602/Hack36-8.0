@@ -7,6 +7,7 @@ import authUser from '../middleware/authUser.js';
 import { uploadImages } from '../middleware/multer.js';
 import passport from '../config/passport.js';
 const UserRouter= express.Router();
+import { generateTokenAndSetCookie } from '../utils/generateTokenandSetCookies.js';
 
 UserRouter.get('/searchPosts',authUser,searchPosts);
 UserRouter.post('/register',userRegister);
