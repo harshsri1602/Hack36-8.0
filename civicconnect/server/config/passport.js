@@ -4,7 +4,6 @@ import jwt from 'jsonwebtoken';
 import UserModel from "../models/user.model.js";
 import dotenv from 'dotenv';
 dotenv.config();
-//console.log(process.env.GOOGLE_ID);
 //import { generateTokenAndSetCookie } from "../utils/generateTokenandSetCookies";
 passport.use(
   new GoogleStrategy(
@@ -40,7 +39,7 @@ passport.use(
         // );
        
 
-        return done(null, { user });
+        return done(null, user );
       } catch (err) {
         return done(err, false);
       }
