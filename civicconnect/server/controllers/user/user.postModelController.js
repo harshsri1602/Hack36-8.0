@@ -4,6 +4,7 @@ import PostModel from "../../models/post.model.js";
 import { v2 as cloudinary } from "cloudinary";
 import UserModel from "../../models/user.model.js";
 import postTitleTrie from "../../utils/TrieIndex.js";
+import mongoose from "mongoose";
 
 // export const createPost = async(req,res)=>{
 //     try{
@@ -193,6 +194,7 @@ export const CreateComment = async (req, res) => {
 // this is for the user to post a vote for a issue (works on postman)
 export const VotePost = async (req, res) => {
     try {
+        
         const userId = req.user._id;
         const { post_id, voteType } = req.body;
 
@@ -204,76 +206,42 @@ export const VotePost = async (req, res) => {
         if (!post) return res.status(404).json({ error: "Post not found" });
         // Input of votetype should be 0 1 2 3
 
-        let flag = false;
+        const existingVote = post.votes.find((v) => v.userId.toString() === userId.toString());
+        const prev = existingVote?.voteType;
 
-        let checkPreviousInteraction = await UserModel.findOne({
-            _id: userId,
-            "interactedPosts.postId": post_id,
-        }).select("interactedPosts");
-        const existingVoteIndex = post.votes.findIndex(
-            (v) => v.userId.toString() === userId.toString()
+        const inc = {};
+        if (prev !== undefined) {
+            const prevField = ["lowCount", "mediumCount", "highCount", "criticalCount"][prev];// the value at index 'prev' is put in the variable prevField
+            inc[prevField] = -1;
+        }
+
+        const newField = ["lowCount", "mediumCount", "highCount", "criticalCount"][voteType];
+        inc[newField] = (inc[newField] || 0) + 1; // we cannot just set inc[newField] = 1 since newField might be same as prev Field , thats wehy the extra check is added
+
+        const update = {$inc : inc};
+        const options = {new : true};
+        if(prev === undefined){
+            // user is voting for the first time
+            update.$push = {votes : {userId , voteType}}
+        }
+        else{
+            update.$set = {"votes.$[elem].voteType" : voteType};
+            options.arrayFilters = [{"elem.userId" : userId}];
+        }
+
+        const updatedPost = await PostModel.findByIdAndUpdate(
+            post_id,
+            update,
+            options
         );
 
-        if (checkPreviousInteraction) {
-            flag = true;
-            // user has already voted on this post
-            // nullify the effect of the previous vote
+        const userUpdate = (prev === undefined) ? { $push: { interactedPosts: { postId: post_id, reaction: voteType } } } : { $set: { "interactedPosts.$.reaction": voteType } };
 
-            const previousReaction =
-                checkPreviousInteraction.interactedPosts.find(
-                    (item) => item.postId.toString() === post_id.toString()
-                );
-            if (previousReaction.reaction === 0) {
-                post.lowCount -= 1;
-            } else if (previousReaction.reaction === 1) {
-                post.mediumCount -= 1;
-            } else if (previousReaction.reaction === 2) {
-                post.highCount -= 1;
-            } else {
-                post.criticalCount -= 1;
-            }
-        }
-        let currentReaction;
-        if (voteType === 0) {
-            currentReaction = 0;
-            post.lowCount += 1;
-        } else if (voteType === 1) {
-            currentReaction = 1;
-            post.mediumCount += 1;
-        } else if (voteType === 2) {
-            currentReaction = 2;
-            post.highCount += 1;
-        } else if (voteType === 3) {
-            currentReaction = 3;
-            post.criticalCount += 1;
-        } else {
-            return res.status(400).json({ error: "Invalid vote type" });
-        }
-        if (!flag) {
-            // user voted on this post for the first time , just add the reaction
-            await UserModel.findOneAndUpdate(
-                { _id: userId },
-                {
-                    $push: {
-                        interactedPosts: {
-                            postId: post_id,
-                            reaction: currentReaction,
-                        },
-                    },
-                }
-            );
-            post.votes.push({ userId, voteType });
-        } else {
-            // user voted on this post b4 , just update the reaction
-            await UserModel.findOneAndUpdate(
-                { _id: userId, "interactedPosts.postId": post_id },
-                { $set: { "interactedPosts.$.reaction": currentReaction } }
-            );
-            post.votes[existingVoteIndex].voteType = voteType;
-        }
+        await UserModel.findOneAndUpdate((prev === undefined) ? { _id: userId } : {_id : userId , "interactedPosts.postId": post_id},userUpdate);
 
-        await post.save();
-        res.status(200).json({ message: "Vote registered", post: post });
+        res.status(200).json({ message: "Vote registered", post: updatedPost });
+
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Something went wrong while voting" });
